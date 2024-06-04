@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+title: Example
+message: >-
+  If you use this dataset, please cite it using the metadata
+  from this file.
+type: dataset
+authors:
+  - given-names: Hasnain
+    family-names: Mohi Ud Din
+    email: mohiuddin1@uni-potsdam.de
+  - given-names: Ayesha
+    family-names: Shahzad
+    email: shahzad@uni-potsdam.de
+  - given-names: Ann Zoe
+    family-names: Thomas
+    email: thomas6@uni-potsdam.de
+  - given-names: Florian
+    family-names: Katerndahl
+    email: Florian.Katerndahl@uni-potsdam.de
+  - given-names: Malin
+    family-names: Ettenhofer
+    email: ettenhofer@uni-potsdam.de
+repository-code: 'https://gitup.uni-potsdam.de/ettenhofer/group_project_2'
+license: GPL-2.0
