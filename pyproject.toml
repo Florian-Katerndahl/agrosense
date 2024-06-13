@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "senseagronomy"
+version = "0.1.0"
+description = ""
+authors = [
+    "Hasnain Mohi Ud Din <mohiuddin1@uni-potsdam.de>",
+    "Ayesha Shahzad <shahzad@uni-potsdam.de>",
+    "Ann Zoe Thomas <thomas6@uni-potsdam.de>",
+    "Florian Katerndahl <florian.katerndahl@uni-potsdam.de>",
+    "Malin Ettenhofer <ettenhofer@uni-potsdam.de>"
+]
+repository = "https://gitup.uni-potsdam.de/ettenhofer/group_project_2"
+license = "GPL-2.0-only"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+xarray = "^2024.5.0"
+rioxarray = "^0.15.5"
+rasterio = "^1.3.10"
+numpy = "^1.26.4"
+numba = "^0.59.1"
+geopandas = "^0.14.4"
+opencv-contrib-python = "^4.10.0.82"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
