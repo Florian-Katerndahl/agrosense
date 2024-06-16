@@ -3,3 +3,5 @@ __pycache__
 poetry.lock
 .*/
 
+test-data
+test-data_2

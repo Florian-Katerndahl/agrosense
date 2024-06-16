@@ -12,6 +12,12 @@ authors = [
 repository = "https://gitup.uni-potsdam.de/ettenhofer/group_project_2"
 license = "GPL-2.0-only"
 readme = "README.md"
+packages = [
+    {include = "senseagronomy", from ="bin"}
+]
+
+[tool.poetry.scripts]
+preprocess = 'bin.apps.preprocess:main'
 
 [tool.poetry.dependencies]
 python = "^3.10"
