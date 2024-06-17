@@ -17,17 +17,17 @@ class Radsat(Enum):
     Mask flag values for radiometric processing QA image
 
     .. note:: b6h_b9 applies to band 6H for Landsat 7 and band 9 for Landsat 8/9.
-    """    
-    b1: np.uint16                =  np.uint16(0b0000000000000001)
-    b2: np.uint16                =  np.uint16(0b0000000000000010)
-    b3: np.uint16                =  np.uint16(0b0000000000000100)
-    b4: np.uint16                =  np.uint16(0b0000000000001000)
-    b5: np.uint16                =  np.uint16(0b0000000000010000)
-    b6: np.uint16                =  np.uint16(0b0000000000100000)
-    b7: np.uint16                =  np.uint16(0b0000000001000000)
-    b6h_b9: np.uint16            =  np.uint16(0b0000000100000000)  # band 6H for LS7, band 9 for LS 8/9
-    dropped_pixel: np.uint16     =  np.uint16(0b0000001000000000)  # only LS 4-7
-    terrain_occlusion: np.uint16 =  np.uint16(0b0000100000000000)  # only LS 8-9
+    """
+    B1: np.uint16                =  np.uint16(0b0000000000000001)
+    B2: np.uint16                =  np.uint16(0b0000000000000010)
+    B3: np.uint16                =  np.uint16(0b0000000000000100)
+    B4: np.uint16                =  np.uint16(0b0000000000001000)
+    B5: np.uint16                =  np.uint16(0b0000000000010000)
+    B6: np.uint16                =  np.uint16(0b0000000000100000)
+    B7: np.uint16                =  np.uint16(0b0000000001000000)
+    B6H_B9: np.uint16            =  np.uint16(0b0000000100000000)
+    DROPPED_PIXEL: np.uint16     =  np.uint16(0b0000001000000000)
+    TERRAIN_OCCLUSION: np.uint16 =  np.uint16(0b0000100000000000)
 
 
 class Pixel(Enum):
@@ -35,35 +35,35 @@ class Pixel(Enum):
     Mask flag values for pixel QA image
 
     .. note:: Cirrus masks only apply to Landsat 8 and 9.
-    """    
-    fill: np.uint16           = np.uint16(0b0000000000000001)
-    dillated_cloud: np.uint16 = np.uint16(0b0000000000000010)
-    cirrus: np.uint16         = np.uint16(0b0000000000000100)  # only LS 8-9
-    cloud: np.uint16          = np.uint16(0b0000000000001000)
-    cloud_shadow: np.uint16   = np.uint16(0b0000000000010000)
-    snow: np.uint16           = np.uint16(0b0000000000100000)
-    clear: np.uint16          = np.uint16(0b0000000001000000)
-    water: np.uint16          = np.uint16(0b0000000010000000)
+    """
+    FILL: np.uint16           = np.uint16(0b0000000000000001)
+    DILLATED_CLOUD: np.uint16 = np.uint16(0b0000000000000010)
+    CIRRUS: np.uint16         = np.uint16(0b0000000000000100)  # only LS 8-9
+    CLOUD: np.uint16          = np.uint16(0b0000000000001000)
+    CLOUD_SHADOW: np.uint16   = np.uint16(0b0000000000010000)
+    SNOW: np.uint16           = np.uint16(0b0000000000100000)
+    CLEAR: np.uint16          = np.uint16(0b0000000001000000)
+    WATER: np.uint16          = np.uint16(0b0000000010000000)
     # cloud confidence levels
-    c_unknown: np.uint16      = np.uint16(0b0000000000000000)
-    c_low: np.uint16          = np.uint16(0b0000000100000000)
-    c_medium: np.uint16       = np.uint16(0b0000001000000000)
-    c_high: np.uint16         = np.uint16(0b0000001100000000)
+    C_UNKNOWN: np.uint16      = np.uint16(0b0000000000000000)
+    C_LOW: np.uint16          = np.uint16(0b0000000100000000)
+    C_MEDIUM: np.uint16       = np.uint16(0b0000001000000000)
+    C_HIGH: np.uint16         = np.uint16(0b0000001100000000)
     # cloud shadow confidence levels
-    cs_unknown: np.uint16     = np.uint16(0b0000000000000000)
-    cs_low: np.uint16         = np.uint16(0b0000010000000000)
-    cs_medium: np.uint16      = np.uint16(0b0000100000000000)
-    cs_high: np.uint16        = np.uint16(0b0000110000000000)
+    CS_UNKNOWN: np.uint16     = np.uint16(0b0000000000000000)
+    CS_LOW: np.uint16         = np.uint16(0b0000010000000000)
+    CS_MEDIUM: np.uint16      = np.uint16(0b0000100000000000)
+    CS_HIGH: np.uint16        = np.uint16(0b0000110000000000)
     # snow/ice confidence
-    sc_unknown: np.uint16     = np.uint16(0b0000000000000000)
-    sc_low: np.uint16         = np.uint16(0b0001000000000000)
-    sc_medium: np.uint16      = np.uint16(0b0010000000000000)
-    sc_high: np.uint16        = np.uint16(0b0011000000000000)
+    SC_UNKNOWN: np.uint16     = np.uint16(0b0000000000000000)
+    SC_LOW: np.uint16         = np.uint16(0b0001000000000000)
+    SC_MEDIUM: np.uint16      = np.uint16(0b0010000000000000)
+    SC_HIGH: np.uint16        = np.uint16(0b0011000000000000)
     # cirrus confidence
-    cc_unknown: np.uint16     = np.uint16(0b0000000000000000)  # only LS 8-9
-    cc_low: np.uint16         = np.uint16(0b0100000000000000)  # only LS 8-9
-    cc_medium: np.uint16      = np.uint16(0b1000000000000000)  # only LS 8-9
-    cc_high: np.uint16        = np.uint16(0b1100000000000000)  # only LS 8-9
+    CC_UNKNOWN: np.uint16     = np.uint16(0b0000000000000000)  # only LS 8-9
+    CC_LOW: np.uint16         = np.uint16(0b0100000000000000)  # only LS 8-9
+    CC_MEDIUM: np.uint16      = np.uint16(0b1000000000000000)  # only LS 8-9
+    CC_HIGH: np.uint16        = np.uint16(0b1100000000000000)  # only LS 8-9
 
 
 class Aerosol(Enum):
@@ -72,15 +72,15 @@ class Aerosol(Enum):
     
     .. note:: Landsat 8-9 equivalent to Cloud enum.
     """
-    fill: np.uint8            = np.uint8(0b00000001)
-    valid_retrieval: np.uint8 = np.uint8(0b00000010)
-    water: np.uint8           = np.uint8(0b00000100)
-    interpolated: np.uint8    = np.uint8(0b00100000)
+    FILL: np.uint8            = np.uint8(0b00000001)
+    VALID_RETRIEVAL: np.uint8 = np.uint8(0b00000010)
+    WATER: np.uint8           = np.uint8(0b00000100)
+    INTERPOLATED: np.uint8    = np.uint8(0b00100000)
     # aerosol levels
-    climatology: np.uint8     = np.uint8(0b00000000)
-    low: np.uint8             = np.uint8(0b01000000)
-    medium: np.uint8          = np.uint8(0b10000000)
-    high: np.uint8            = np.uint8(0b11000000)
+    CLIMATOLOGY: np.uint8     = np.uint8(0b00000000)
+    LOW: np.uint8             = np.uint8(0b01000000)
+    MEDIUM: np.uint8          = np.uint8(0b10000000)
+    HIGH: np.uint8            = np.uint8(0b11000000)
 
 
 class Cloud(Enum):
@@ -89,12 +89,12 @@ class Cloud(Enum):
     
     .. note:: Landsat 4-7 equivalent to Aerosol enum.
     """
-    ddv: np.uint8          = np.uint8(0b00000001)
-    cloud: np.uint8        = np.uint8(0b00000010)
-    cloud_shadow: np.uint8 = np.uint8(0b00000100)
-    near_cloud: np.uint8   = np.uint8(0b00001000)
-    snow: np.uint8         = np.uint8(0b00010000)
-    water: np.uint8        = np.uint8(0b00100000)
+    DDV: np.uint8          = np.uint8(0b00000001)
+    CLOUD: np.uint8        = np.uint8(0b00000010)
+    CLOUD_SHADOW: np.uint8 = np.uint8(0b00000100)
+    NEAR_CLOUD: np.uint8   = np.uint8(0b00001000)
+    SNOW: np.uint8         = np.uint8(0b00010000)
+    WATER: np.uint8        = np.uint8(0b00100000)
 
 class Scene:
     """
@@ -112,7 +112,7 @@ class Scene:
         :type directory: str
         :param fglob: File glob/name for main multiband images
         :type fglob: str
-        """        
+        """
         self.directory: str = directory
         self.fglob: str = fglob
         self.dataset: Optional[np.ndarray] = None
@@ -134,15 +134,20 @@ class Scene:
         """
         Read all bands as numpy arrays
 
-        .. note:: Values outside valid value ranges are set to np.nan as well as values that equal the fill value.
-        """        
+        .. note:: Values outside valid value ranges are set to np.nan as well as values that
+            equal the fill value.
+        """
         if self.dataset is None:
             self.dataset = rio.open(self.directory + "/" + self.fglob)
-        
+
         self.raw = self.dataset.read(self.dataset.indexes).astype(np.float64)
         for band in range(len(self.dataset.indexes)):
-            self.raw[band] = np.where((self.raw[band] < self.boundaries[0]) | (self.raw[band] > self.boundaries[1]), np.nan, self.raw[band])
-        
+            self.raw[band] = np.where(
+                (self.raw[band] < self.boundaries[0]) | (self.raw[band] > self.boundaries[1]),
+                np.nan,
+                self.raw[band]
+            )
+
         self.raw[self.raw == Scene.FILL_VALUE] = np.nan
 
     def get_metadata_from_xml(self) -> Tuple[np.ndarray]:
@@ -159,11 +164,11 @@ class Scene:
         :raises ParseError: If expected XML tags are not found
         :return: Tuple containing gains and offsets
         :rtype: Tuple[np.ndarray]
-        """        
+        """
         try:
             mtl_xml = glob("*MTL.xml", root_dir=self.directory).pop()
-        except IndexError:
-            raise FileNotFoundError
+        except IndexError as exc:
+            raise FileNotFoundError from exc
 
         tree = ET.parse(self.directory + "/" + mtl_xml)
         root = tree.getroot()
@@ -201,11 +206,12 @@ class Scene:
         .. note:: Clamp should not be needed if all data ranges are
             clipped correctly when reading raw data. However,
             stil used as a precaution.
-        
+
         .. note:: Reflectance of 0 would be incorrect, so it's set to
             smallest float value.
 
-        :param clamp: Clamp values after linear transformation to range [float64.min, 1.0], defaults to False
+        :param clamp: Clamp values after linear transformation to range
+            [float64.min, 1.0], defaults to False
         :type clamp: bool, optional
         """
         self.raw = self.raw * self.gains + self.offsets
@@ -223,24 +229,28 @@ class Scene:
         :raises FileNotFoundError: If respective QA image is not found
         :return: Binary mask array
         :rtype: np.ndarray
-        """        
+        """
         try:
             pixel_qa_fp = glob(self.directory + "/" + "*QA_PIXEL.TIF").pop()
-        except IndexError:
-            raise FileNotFoundError
-        
+        except IndexError as exc:
+            raise FileNotFoundError from exc
+
         compund_flag = np.uint16(0)
         for flag in flags:
             compund_flag = np.bitwise_or(compund_flag, flag.value)
-        
+
         with rio.open(pixel_qa_fp, "r") as ds:
             pixel_qa = ds.read(1)
-        
+
         pixel_qa = np.bitwise_and(pixel_qa, compund_flag)
         pixel_qa = np.where(pixel_qa == 0, 0, 1).astype(bool)
-        return pixel_qa        
+        return pixel_qa
 
-    def get_aerosol_qa(self, flags: List[Union[Aerosol, Cloud]], fglob: Literal["SR_QA_AEROSOL", "SR_CLOUD_QA"]) -> np.ndarray:
+    def get_aerosol_qa(
+        self,
+        flags: List[Union[Aerosol, Cloud]],
+        fglob: Literal["SR_QA_AEROSOL", "SR_CLOUD_QA"]
+        ) -> np.ndarray:
         """
         Filter aerosol QA image with regard to supplied flags
 
@@ -254,19 +264,19 @@ class Scene:
         :raises FileNotFoundError: If respective QA image is not found
         :return: Binary mask array
         :rtype: np.ndarray
-        """        
+        """
         try:
             pixel_qa_fp = glob(self.directory + "/*" + fglob + ".TIF").pop()
-        except IndexError:
-            raise FileNotFoundError
-        
+        except IndexError as exc:
+            raise FileNotFoundError from exc
+
         compund_flag = np.uint8(0)
         for flag in flags:
             compund_flag = np.bitwise_or(compund_flag, flag.value)
-        
+
         with rio.open(pixel_qa_fp, "r") as ds:
             pixel_qa = ds.read(1)
-        
+
         pixel_qa = np.bitwise_and(pixel_qa, compund_flag)
         pixel_qa = np.where(pixel_qa == 0, 0, 1).astype(bool)
         return pixel_qa
@@ -282,19 +292,19 @@ class Scene:
         :raises FileNotFoundError: If respective QA image is not found
         :return: Binary mask array
         :rtype: np.ndarray
-        """        
+        """
         try:
             pixel_qa_fp = glob(self.directory + "/" + "*QA_RADSAT.TIF").pop()
-        except IndexError:
-            raise FileNotFoundError
-        
+        except IndexError as exc:
+            raise FileNotFoundError from exc
+
         compund_flag = np.uint16(0)
         for flag in flags:
             compund_flag = np.bitwise_or(compund_flag, flag.value)
-        
+
         with rio.open(pixel_qa_fp, "r") as ds:
             pixel_qa = ds.read(1)
-        
+
         pixel_qa = np.bitwise_and(pixel_qa, compund_flag)
         pixel_qa = np.where(pixel_qa == 0, 0, 1).astype(bool)
         return pixel_qa
