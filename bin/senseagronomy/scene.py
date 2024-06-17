@@ -1,13 +1,10 @@
 from enum import Enum
 from glob import glob
-from pathlib import Path
-from typing import Dict, Optional, Literal, Union, Tuple, List
+from typing import Dict, Optional, Union, Tuple, List
 import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import ParseError
 import rasterio as rio
 import numpy as np
-
-# TODO Move back to Enums and Union QA values for LS4-7 and LS6-9 as they have identical value ranges, gains and non-interfering qa values
 
 
 class Radsat(Enum):
@@ -19,14 +16,14 @@ class Radsat(Enum):
     b6: np.uint16                =  np.uint16(0b0000000000100000)
     b7: np.uint16                =  np.uint16(0b0000000001000000)
     b6h_b9: np.uint16            =  np.uint16(0b0000000100000000)  # band 6H for LS7, band 9 for LS 8/9
-    dropped_pixel: np.uint16     =  np.uint16(0b0000001000000000)
-    terrain_occlusion: np.uint16 =  np.uint16(0b0000100000000000)
+    dropped_pixel: np.uint16     =  np.uint16(0b0000001000000000)  # only LS 4-7
+    terrain_occlusion: np.uint16 =  np.uint16(0b0000100000000000)  # only LS 8-9
 
 
 class Pixel(Enum):
     fill: np.uint16           = np.uint16(0b0000000000000001)
     dillated_cloud: np.uint16 = np.uint16(0b0000000000000010)
-    cirrus: np.uint16         = np.uint16(0b0000000000000100)
+    cirrus: np.uint16         = np.uint16(0b0000000000000100)  # only LS 8-9
     cloud: np.uint16          = np.uint16(0b0000000000001000)
     cloud_shadow: np.uint16   = np.uint16(0b0000000000010000)
     snow: np.uint16           = np.uint16(0b0000000000100000)
@@ -48,10 +45,10 @@ class Pixel(Enum):
     sc_medium: np.uint16      = np.uint16(0b0010000000000000)
     sc_high: np.uint16        = np.uint16(0b0011000000000000)
     # cirrus confidence
-    cc_unknown: np.uint16     = np.uint16(0b0000000000000000)
-    cc_low: np.uint16         = np.uint16(0b0100000000000000)
-    cc_medium: np.uint16      = np.uint16(0b1000000000000000)
-    cc_high: np.uint16        = np.uint16(0b1100000000000000)
+    cc_unknown: np.uint16     = np.uint16(0b0000000000000000)  # only LS 8-9
+    cc_low: np.uint16         = np.uint16(0b0100000000000000)  # only LS 8-9
+    cc_medium: np.uint16      = np.uint16(0b1000000000000000)  # only LS 8-9
+    cc_high: np.uint16        = np.uint16(0b1100000000000000)  # only LS 8-9
 
 
 class Aerosol(Enum):
@@ -155,7 +152,7 @@ class Scene:
         if clamp:
             self.raw = np.clip(self.raw, np.finfo(np.float64).tiny, 1.0)
 
-    def get_pixel_qa(self, flags: List[np.uint16]) -> np.ndarray:
+    def get_pixel_qa(self, flags: List[Pixel]) -> np.ndarray:
         try:
             pixel_qa_fp = glob(self.directory + "/" + "*QA_PIXEL.TIF").pop()
         except IndexError:
@@ -173,7 +170,7 @@ class Scene:
         pixel_qa = np.where(pixel_qa == 0, 0, 1).astype(bool)
         return pixel_qa        
 
-    def get_aerosol_qa(self, flags: List[np.uint8]) -> np.ndarray:
+    def get_aerosol_qa(self, flags: List[Union[Aerosol, Cloud]]) -> np.ndarray:
         try:
             pixel_qa_fp = glob(self.directory + "/" + "*SR_QA_AEROSOL.TIF").pop()
         except IndexError:
@@ -191,7 +188,7 @@ class Scene:
         pixel_qa = np.where(pixel_qa == 0, 0, 1).astype(bool)
         return pixel_qa
 
-    def get_radsat_qa(self, flags: List[np.uint16]) -> np.ndarray:
+    def get_radsat_qa(self, flags: List[Radsat]) -> np.ndarray:
         try:
             pixel_qa_fp = glob(self.directory + "/" + "*QA_RADSAT.TIF").pop()
         except IndexError:
