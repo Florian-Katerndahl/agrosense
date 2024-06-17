@@ -1,6 +1,11 @@
+"""
+Documentation from the USGS used as references:
+- LSDS-1619, version 6: Landsat 8-9 Collection 2 (C2) Level 2 Science Product (L2SP) Guide 
+- LSDS-1618, verison 4: Landsat 4-7 Collection 2 (C2) Level 2 Science Product (L2SP) Guide
+"""
 from enum import Enum
 from glob import glob
-from typing import Dict, Optional, Union, Tuple, List
+from typing import Dict, Optional, Union, Tuple, List, Literal
 import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import ParseError
 import rasterio as rio
@@ -8,6 +13,11 @@ import numpy as np
 
 
 class Radsat(Enum):
+    """
+    Mask flag values for radiometric processing QA image
+
+    .. note:: b6h_b9 applies to band 6H for Landsat 7 and band 9 for Landsat 8/9.
+    """    
     b1: np.uint16                =  np.uint16(0b0000000000000001)
     b2: np.uint16                =  np.uint16(0b0000000000000010)
     b3: np.uint16                =  np.uint16(0b0000000000000100)
@@ -21,6 +31,11 @@ class Radsat(Enum):
 
 
 class Pixel(Enum):
+    """
+    Mask flag values for pixel QA image
+
+    .. note:: Cirrus masks only apply to Landsat 8 and 9.
+    """    
     fill: np.uint16           = np.uint16(0b0000000000000001)
     dillated_cloud: np.uint16 = np.uint16(0b0000000000000010)
     cirrus: np.uint16         = np.uint16(0b0000000000000100)  # only LS 8-9
@@ -53,7 +68,9 @@ class Pixel(Enum):
 
 class Aerosol(Enum):
     """
-    Landsat 8-9 equivalent to Cloud enum
+    Mask flag values for Aerosol QA image
+    
+    .. note:: Landsat 8-9 equivalent to Cloud enum.
     """
     fill: np.uint8            = np.uint8(0b00000001)
     valid_retrieval: np.uint8 = np.uint8(0b00000010)
@@ -68,7 +85,9 @@ class Aerosol(Enum):
 
 class Cloud(Enum):
     """
-    Landsat 4-7 equivalent to Aerosol enum
+    Mask flag values for Aerosol QA image
+    
+    .. note:: Landsat 4-7 equivalent to Aerosol enum.
     """
     ddv: np.uint8          = np.uint8(0b00000001)
     cloud: np.uint8        = np.uint8(0b00000010)
@@ -84,6 +103,16 @@ class Scene:
     FILL_VALUE: int = 0
 
     def __init__(self, directory: str, fglob: str) -> None:
+        """
+        Initialize scene object
+
+        .. warning:: Valid data ranges are hardcoded for the L2SP processing level!
+
+        :param directory: Directory path where files are stored
+        :type directory: str
+        :param fglob: File glob/name for main multiband images
+        :type fglob: str
+        """        
         self.directory: str = directory
         self.fglob: str = fglob
         self.dataset: Optional[np.ndarray] = None
@@ -91,7 +120,7 @@ class Scene:
         self.gains: Optional[np.ndarray] = None
         self.offsets: Optional[np.ndarray] = None
         self.raw: Optional[np.ndarray] = None
-        self.boundaries = (7273, 43636)  # note: hard coded for L2SP
+        self.boundaries = (7273, 43636)
 
     def __enter__(self):
         self.dataset = rio.open(self.directory + "/" + self.fglob)
@@ -102,6 +131,11 @@ class Scene:
         self.dataset.close()
 
     def read_raw(self):
+        """
+        Read all bands as numpy arrays
+
+        .. note:: Values outside valid value ranges are set to np.nan as well as values that equal the fill value.
+        """        
         if self.dataset is None:
             self.dataset = rio.open(self.directory + "/" + self.fglob)
         
@@ -112,6 +146,20 @@ class Scene:
         self.raw[self.raw == Scene.FILL_VALUE] = np.nan
 
     def get_metadata_from_xml(self) -> Tuple[np.ndarray]:
+        """
+        Get metadata (i.e. gains and offsets) from corresponding XML file
+
+        .. note:: As gain and offset are identical for all sensors in the
+            Collection 2, Level2, Tier 1 (L2 Scientific Products), this is
+            not needed strictly speaking but may make adopotion to other
+            data sources easier as well as dealing with different number
+            of bands across sensors.
+
+        :raises FileNotFoundError: If metadata file in XML format is not found
+        :raises ParseError: If expected XML tags are not found
+        :return: Tuple containing gains and offsets
+        :rtype: Tuple[np.ndarray]
+        """        
         try:
             mtl_xml = glob("*MTL.xml", root_dir=self.directory).pop()
         except IndexError:
@@ -146,13 +194,36 @@ class Scene:
         return gains, offsets
 
     def apply_transformation(self, clamp: bool = False):
-        # note: clamp should not be needed if all data ranges are clipped correctly when reading raw data. However, stil used as a precaution
-        # note: reflectance of 0 would be incorrect so I set it to smallest float
+        """
+        Apply linear transformation of form `y = m*x + b` to input bands
+        in order to retrieve reflectance values.
+
+        .. note:: Clamp should not be needed if all data ranges are
+            clipped correctly when reading raw data. However,
+            stil used as a precaution.
+        
+        .. note:: Reflectance of 0 would be incorrect, so it's set to
+            smallest float value.
+
+        :param clamp: Clamp values after linear transformation to range [float64.min, 1.0], defaults to False
+        :type clamp: bool, optional
+        """
         self.raw = self.raw * self.gains + self.offsets
         if clamp:
             self.raw = np.clip(self.raw, np.finfo(np.float64).tiny, 1.0)
 
     def get_pixel_qa(self, flags: List[Pixel]) -> np.ndarray:
+        """
+        Filter pixel QA image with regard to supplied flags
+
+        .. note:: Pixels to be masked out are set to True.
+
+        :param flags: List of flags to apply
+        :type flags: List[Pixel]
+        :raises FileNotFoundError: If respective QA image is not found
+        :return: Binary mask array
+        :rtype: np.ndarray
+        """        
         try:
             pixel_qa_fp = glob(self.directory + "/" + "*QA_PIXEL.TIF").pop()
         except IndexError:
@@ -166,13 +237,26 @@ class Scene:
             pixel_qa = ds.read(1)
         
         pixel_qa = np.bitwise_and(pixel_qa, compund_flag)
-        # pixels to be masked out (i.e. invalid pixels) are True => in docstring as note
         pixel_qa = np.where(pixel_qa == 0, 0, 1).astype(bool)
         return pixel_qa        
 
-    def get_aerosol_qa(self, flags: List[Union[Aerosol, Cloud]]) -> np.ndarray:
+    def get_aerosol_qa(self, flags: List[Union[Aerosol, Cloud]], fglob: Literal["SR_QA_AEROSOL", "SR_CLOUD_QA"]) -> np.ndarray:
+        """
+        Filter aerosol QA image with regard to supplied flags
+
+        .. note:: Pixels to be masked out are set to True.
+
+        :param flags: List of flags to apply
+        :type flags: List[Pixel]
+        :param fglob: File glob for aerosol quality image. This file is named differently
+            for Landsat 4 to 7 ("SR_CLOUD_QA") and Landsat 8 to 9 ("SR_QA_AEROSOL")
+        :type fglob: Literal["SR_QA_AEROSOL", "SR_CLOUD_QA"]
+        :raises FileNotFoundError: If respective QA image is not found
+        :return: Binary mask array
+        :rtype: np.ndarray
+        """        
         try:
-            pixel_qa_fp = glob(self.directory + "/" + "*SR_QA_AEROSOL.TIF").pop()
+            pixel_qa_fp = glob(self.directory + "/*" + fglob + ".TIF").pop()
         except IndexError:
             raise FileNotFoundError
         
@@ -184,11 +268,21 @@ class Scene:
             pixel_qa = ds.read(1)
         
         pixel_qa = np.bitwise_and(pixel_qa, compund_flag)
-        # pixels to be masked out (i.e. invalid pixels) are True => in docstring as note
         pixel_qa = np.where(pixel_qa == 0, 0, 1).astype(bool)
         return pixel_qa
 
     def get_radsat_qa(self, flags: List[Radsat]) -> np.ndarray:
+        """
+        Filter radiometric QA image with regard to supplied flags
+
+        .. note:: Pixels to be masked out are set to True.
+
+        :param flags: List of flags to apply
+        :type flags: List[Pixel]
+        :raises FileNotFoundError: If respective QA image is not found
+        :return: Binary mask array
+        :rtype: np.ndarray
+        """        
         try:
             pixel_qa_fp = glob(self.directory + "/" + "*QA_RADSAT.TIF").pop()
         except IndexError:
@@ -202,6 +296,5 @@ class Scene:
             pixel_qa = ds.read(1)
         
         pixel_qa = np.bitwise_and(pixel_qa, compund_flag)
-        # pixels to be masked out (i.e. invalid pixels) are True => in docstring as note
         pixel_qa = np.where(pixel_qa == 0, 0, 1).astype(bool)
         return pixel_qa
