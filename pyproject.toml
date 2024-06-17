@@ -17,7 +17,7 @@ packages = [
 ]
 
 [tool.poetry.scripts]
-preprocess = 'bin.apps.preprocess:main'
+preprocess = 'apps.preprocess:main'
 
 [tool.poetry.dependencies]
 python = "^3.10"
