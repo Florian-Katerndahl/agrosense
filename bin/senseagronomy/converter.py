@@ -6,53 +6,53 @@ def str2pixel(flags: List[str]) -> List[Pixel]:
     for flag in flags:
         match flag:
             case "FILL":
-                out.append(Pixel.fill)
+                out.append(Pixel.FILL)
             case "DILLATED_CLOUD":
-                out.append(Pixel.dillated_cloud)
+                out.append(Pixel.DILLATED_CLOUD)
             case "CIRRUS":
-                out.append(Pixel.cirrus)
+                out.append(Pixel.CIRRUS)
             case "CLOUD":
-                out.append(Pixel.cloud)
+                out.append(Pixel.CLOUD)
             case "CLOUD_SHADOW":
-                out.append(Pixel.cloud_shadow)
+                out.append(Pixel.CLOUD_SHADOW)
             case "SNOW":
-                out.append(Pixel.snow)
+                out.append(Pixel.SNOW)
             case "CLEAR":
-                out.append(Pixel.clear)
+                out.append(Pixel.CLEAR)
             case "WATER":
-                out.append(Pixel.water)
+                out.append(Pixel.WATER)
             case "C_UNKNOWN":
-                out.append(Pixel.c_unknown)
+                out.append(Pixel.C_UNKNOWN)
             case "C_LOW":
-                out.append(Pixel.c_low)
+                out.append(Pixel.C_LOW)
             case "C_MEDIUM":
-                out.append(Pixel.c_medium)
+                out.append(Pixel.C_MEDIUM)
             case "C_HIGH":
-                out.append(Pixel.c_high)
+                out.append(Pixel.C_HIGH)
             case "CS_UNKNOWN":
-                out.append(Pixel.cs_unknown)
+                out.append(Pixel.CS_UNKNOWN)
             case "CS_LOW":
-                out.append(Pixel.cs_low)
+                out.append(Pixel.CS_LOW)
             case "CS_MEDIUM":
-                out.append(Pixel.cs_medium)
+                out.append(Pixel.CS_MEDIUM)
             case "CS_HIGH":
-                out.append(Pixel.cs_high)
+                out.append(Pixel.CS_HIGH)
             case "SC_UNKNOWN":
-                out.append(Pixel.sc_unknown)
+                out.append(Pixel.SC_UNKNOWN)
             case "SC_LOW":
-                out.append(Pixel.sc_low)
+                out.append(Pixel.SC_LOW)
             case "SC_MEDIUM":
-                out.append(Pixel.sc_medium)
+                out.append(Pixel.SC_MEDIUM)
             case "SC_HIGH":
-                out.append(Pixel.sc_high)
+                out.append(Pixel.SC_HIGH)
             case "CC_UNKNOWN":
-                out.append(Pixel.cc_unknown)
+                out.append(Pixel.CC_UNKNOWN)
             case "CC_LOW":
-                out.append(Pixel.cc_low)
+                out.append(Pixel.CC_LOW)
             case "CC_MEDIUM":
-                out.append(Pixel.cc_medium)
+                out.append(Pixel.CC_MEDIUM)
             case "CC_HIGH":
-                out.append(Pixel.cc_high)
+                out.append(Pixel.CC_HIGH)
             case _:
                 raise RuntimeError
 
@@ -64,67 +64,71 @@ def str2radsat(flags: List[str]) -> List[Radsat]:
     for flag in flags:
         match flag:
             case "B1":
-                out.append(Radsat.b1)
+                out.append(Radsat.B1)
             case "B2":
-                out.append(Radsat.b2)
+                out.append(Radsat.B2)
             case "B3":
-                out.append(Radsat.b3)
+                out.append(Radsat.B3)
             case "B4":
-                out.append(Radsat.b4)
+                out.append(Radsat.B4)
             case "B5":
-                out.append(Radsat.b5)
+                out.append(Radsat.B5)
             case "B6":
-                out.append(Radsat.b6)
+                out.append(Radsat.B6)
             case "B7":
-                out.append(Radsat.b7)
+                out.append(Radsat.B7)
             case "B6H_9":
-                out.append(Radsat.b6h_b9)
+                out.append(Radsat.B6H_B9)
             case "DROPPED":
-                out.append(Radsat.dropped_pixel)
+                out.append(Radsat.DROPPED_PIXEL)
             case "TERRAIN_OCCLUSION":
-                out.append(Radsat.terrain_occlusion)
+                out.append(Radsat.TERRAIN_OCCLUSION)
             case _:
                 raise RuntimeError
 
     return out
 
 
-def str2aerosol(platform: str, a_flags: List[str], c_flags: List[str]) -> List[Union[Aerosol, Cloud]]:
+def str2aerosol(
+    platform: str,
+    a_flags: List[str],
+    c_flags: List[str]
+    ) -> List[Union[Aerosol, Cloud]]:
     out: List[Union[Aerosol, Cloud]] = []
     if platform == "OLI":
         for flag in a_flags:
             match flag:
                 case "FILL":
-                    out.append(Aerosol.fill)
+                    out.append(Aerosol.FILL)
                 case "VALID_RETRIEVAL":
-                    out.append(Aerosol.valid_retrieval)
+                    out.append(Aerosol.VALID_RETRIEVAL)
                 case "INTERPOLATED":
-                    out.append(Aerosol.interpolated)
+                    out.append(Aerosol.INTERPOLATED)
                 case "CLIMATOLOGY":
-                    out.append(Aerosol.climatology)
+                    out.append(Aerosol.CLIMATOLOGY)
                 case "LOW":
-                    out.append(Aerosol.low)
+                    out.append(Aerosol.LOW)
                 case "MEDIUM":
-                    out.append(Aerosol.medium)
+                    out.append(Aerosol.MEDIUM)
                 case "HIGH":
-                    out.append(Aerosol.high)
+                    out.append(Aerosol.HIGH)
                 case _:
                     raise RuntimeError
     else:
         for flag in c_flags:
             match flag:
                 case "DDV":
-                    out.append(Cloud.ddv)
+                    out.append(Cloud.DDV)
                 case "CLOUD":
-                    out.append(Cloud.cloud)
+                    out.append(Cloud.CLOUD)
                 case "CLOUD_SHADOW":
-                    out.append(Cloud.cloud_shadow)
+                    out.append(Cloud.CLOUD_SHADOW)
                 case "NEAR_CLOUD":
-                    out.append(Cloud.near_cloud)
+                    out.append(Cloud.NEAR_CLOUD)
                 case "SNOW":
-                    out.append(Cloud.snow)
+                    out.append(Cloud.SNOW)
                 case "WATER":
-                    out.append(Cloud.water)
+                    out.append(Cloud.WATER)
                 case _:
                     raise RuntimeError
 
