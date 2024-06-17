@@ -27,7 +27,7 @@ def main() -> int:
 
     clear_mask = ~S.get_pixel_qa(str2pixel(args.pixel_qa))[np.newaxis, ...]
     radsat_mask = S.get_radsat_qa(str2radsat(args.radsat_qa))[np.newaxis, ...]
-    aerosol_mask = S.get_aerosol_qa(str2aerosol(args.platform, args.aerosol_qa, args.cloud_qa))[np.newaxis, ...]
+    aerosol_mask = S.get_aerosol_qa(str2aerosol(args.platform, args.aerosol_qa, args.cloud_qa), "SR_QA_AEROSOL" if args.platform == "OLI" else "SR_CLOUD_QA")[np.newaxis, ...]
 
     mask = np.any(np.concatenate([clear_mask, radsat_mask, aerosol_mask], axis=0), axis=0, keepdims=True).repeat(S.raw.shape[0], axis=0)
 
