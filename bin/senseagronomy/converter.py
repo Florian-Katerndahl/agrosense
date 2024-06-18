@@ -114,7 +114,7 @@ def str2aerosol(
                     out.append(Aerosol.HIGH)
                 case _:
                     raise RuntimeError
-    else:
+    elif platform == "TM":
         for flag in c_flags:
             match flag:
                 case "DDV":
@@ -131,5 +131,7 @@ def str2aerosol(
                     out.append(Cloud.WATER)
                 case _:
                     raise RuntimeError
+    else:
+        raise AttributeError(f"Got unknown sensor platform: {platform}")
 
     return out
