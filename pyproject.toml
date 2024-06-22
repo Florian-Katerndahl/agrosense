@@ -3,10 +3,10 @@ name = "senseagronomy"
 version = "0.1.0"
 description = ""
 authors = [
+    "Florian Katerndahl <florian.katerndahl@uni-potsdam.de>",
     "Hasnain Mohi Ud Din <mohiuddin1@uni-potsdam.de>",
     "Ayesha Shahzad <shahzad@uni-potsdam.de>",
     "Ann Zoe Thomas <thomas6@uni-potsdam.de>",
-    "Florian Katerndahl <florian.katerndahl@uni-potsdam.de>",
     "Malin Ettenhofer <ettenhofer@uni-potsdam.de>"
 ]
 repository = "https://gitup.uni-potsdam.de/ettenhofer/group_project_2"
@@ -17,7 +17,7 @@ packages = [
 ]
 
 [tool.poetry.scripts]
-preprocess = 'apps.preprocess:main'
+preprocess = 'senseagronomy.apps.preprocess:main'
 
 [tool.poetry.dependencies]
 python = "^3.11"
