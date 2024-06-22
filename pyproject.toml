@@ -30,6 +30,9 @@ geopandas = "^0.14.4"
 opencv-contrib-python = "^4.10.0.82"
 
 
+[tool.poetry.group.test.dependencies]
+pytest = "^8.2.2"
+
 [tool.poetry.group.workflow.dependencies]
 snakemake = "^8.14.0"
 
