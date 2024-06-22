@@ -1,0 +1,88 @@
+rule all:
+    input: "results/final-report.pdf"
+
+rule clean:
+    shell:
+        "rm -rf results/*"
+
+rule download:
+    input:
+    output:
+    shell:
+        ""
+
+rule stack_raws:
+    input:
+    output:
+    shell:
+        ""
+
+rule process_stack:
+    input:
+    output:
+    container:
+        "docker://floriankaterndahl/agrosense:latest"
+    shell:
+        "preprocess --help"
+
+rule cube:
+    # https://snakemake.readthedocs.io/en/stable/snakefiles/rules.html#directories-as-outputs
+    # https://snakemake.readthedocs.io/en/stable/snakefiles/rules.html#defining-scatter-gather-processes
+    input:
+    output:
+    container:
+        "docker://davidfrantz/force:3.7.12"
+    shell:
+        "force-cube --help"
+
+rule vegetation_index:
+    # These are just ideas, no need to actually use them but they can ofc
+    input:
+    output:
+    container:
+        "docker://ghcr.io/osgeo/gdal:ubuntu-full-latest"
+    shell:
+        "gdal_calc.py -A {input} -A_band=5 -B {input} -B_band=4 --calc='(A - B)/(A + B)' --type np.float32 --outfile={output} -co 'COMPRESS=DEFLATE' -co 'PREDICTOR=3'"
+
+rule max_vegetation_index:
+    # TODO this would need to be executed per tile per year
+    # These are just ideas, no need to actually use them but they can ofc
+    input:
+    output:
+    container:
+        "docker://ghcr.io/osgeo/gdal:ubuntu-full-latest"
+    shell:
+        "gdal_calc.py -A {input} --outfile={output} --calc='max(A, axis=0)'-co 'COMPRESS=DEFLATE' -co 'PREDICTOR=3'"
+
+rule circles:
+    # TODO this would need to be executed per tile per year
+    input:
+    output:
+    shell:
+        ""
+
+rule real_coords:
+    input:
+    output:
+    shell:
+        ""
+
+# TODO there's a rule missing which consolidates data again?! Not quite sure actually
+
+rule maps:
+    input:
+    output:
+    shell:
+        ""
+
+rule accuracy_assessment:
+    input:
+    output:
+    shell:
+        ""
+
+rule render_report:
+    input: "report/whatever.md", ...
+    output: "results/final-report.pdf"
+    shell:
+        "pandoc -o {output} {input}"
