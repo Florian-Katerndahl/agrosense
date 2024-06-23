@@ -1,88 +1,149 @@
+from pathlib import Path
+
+# is this REALLY the way to go? This sucks..
+SCENES = [p.name.split(".")[0] for p in Path("resources/landsat/").glob("*.tar")]
+
 rule all:
-    input: "results/final-report.pdf"
+    input: "results/cubes" # expand("results/landsat/preprocessed/{scene}.tif", scene=SCENES)
+    default_target: True
 
 rule clean:
     shell:
         "rm -rf results/*"
 
-rule download:
-    input:
-    output:
-    shell:
+# rule download:
+#     input:
+#     output:
+#     shell:
         ""
+
+rule unpack:
+    input: "resources/landsat/{scene}.tar"
+    output: directory("results/landsat/unpacked/{scene}/")
+    shell:
+        """
+        mkdir {output}
+        tar -xf {input} -C {output}
+        rm {output}/*_ST*
+        rm {output}/*.txt
+        """
 
 rule stack_raws:
-    input:
-    output:
-    shell:
-        ""
-
-rule process_stack:
-    input:
-    output:
+    input: "results/landsat/unpacked/{scene}/"
+    output: directory("results/landsat/stacked/{scene}/")
     container:
-        "docker://floriankaterndahl/agrosense:latest"
+        "docker://ghcr.io/osgeo/gdal:ubuntu-full-latest"
     shell:
-        "preprocess --help"
+        """
+        mkdir {output}
+        gdal_merge.py -q -separate -o {wildcards.scene}.tif {input}/*SR_B*.TIF
+        mv {wildcards.scene}.tif {output}
+        cp {input}/*_QA*.TIF {input}/*.xml {output}
+        """        
 
+# TODO make checkpoint instead?
+rule process_stack:
+    input: "results/landsat/stacked/{scene}/"
+    output: "results/landsat/preprocessed/{scene}.tif"
+    container:
+        # not having a version specifier is sub-optimal, but ok for development I suppose
+        "docker://floriankaterndahl/agrosense"
+    shell:
+        """
+        # ls -la results/landsat/stacked/{wildcards.scene}/
+        PLATFORM=$(basename {input}/{wildcards.scene}.tif | cut -d '_' -f1)
+        if [[ "$PLATFORM" == 'LC09' || "$PLATFORM" == 'LC08' ]];
+        then
+            SENSOR=OLI
+        else
+            SENSOR=TM
+        fi
+        preprocess --platform $SENSOR -o {output} {wildcards.scene}.tif {input}
+        """
+
+# input function for rule aggregate, return paths to all files produced by the checkpoint 'somestep'
+def aggregate_input(wildcards):
+    checkpoint_output = checkpoints.process_stack.get(**wildcards).output[0]
+    return expand("results/landsat/preprocessed/{i}.tif",
+                i=glob_wildcards(os.path.join(checkpoint_output, "{i}")).i)
+
+# TODO make checkpoint?
+# TODO use custom aggregation fuction for input?! and use prefix to pass acutal directory?!
+# TODO do temporal aggregation on file system? I.e. results/cubes/{year}/X....Y..../
 rule cube:
     # https://snakemake.readthedocs.io/en/stable/snakefiles/rules.html#directories-as-outputs
     # https://snakemake.readthedocs.io/en/stable/snakefiles/rules.html#defining-scatter-gather-processes
-    input:
-    output:
+    # FIXME origin and data type not hardcoded!
+    input: "results/landsat/preprocessed/"
+    # params:
+    #     in_dir = "results/landsat/preprocessed/"
+    output: directory("results/cubes")
     container:
         "docker://davidfrantz/force:3.7.12"
+    threads: 2
     shell:
-        "force-cube --help"
+        """
+        GLANCE7_AFRICA='PROJCS["BU MEaSUREs Lambert Azimuthal Equal Area - AF - V01",GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",SPHEROID["WGS_1984",6378137.0,298.257223563]],PRIMEM["Greenwich",0.0],UNIT["degree",0.0174532925199433]],PROJECTION["Lambert_Azimuthal_Equal_Area"],PARAMETER["false_easting",0.0],PARAMETER["false_northing",0.0],PARAMETER["longitude_of_center",20],PARAMETER["latitude_of_center",5],UNIT["meter",1.0]]'
+        
+        find {input} -type f -name "*.tif" > all_rasters.txt
+        cat all_rasters.txt | xargs -I {{}} basename {{}} | cut -d "_" -f 4 | sed -r 's/(.{{4}})/\\1 /g' | cut -d " " -f 1 | sort | uniq > years.txt
+        while read year; do
+            mkdir -p {output}/$year
+            force-cube-init -d {output}/$year -o 24,47 "$GLANCE7_AFRICA"
+            find {input} -type f  > yearly_files.txt
+            force-cube -s 30 $(cat yearly_files.txt) -o {output}/$year -j {threads} -t Int16
+        done < years.txt
+        """
 
+# TODO use custom aggregation here? But I dont want to aggregate files here? This should be executead as many times as there are files
 rule vegetation_index:
-    # These are just ideas, no need to actually use them but they can ofc
-    input:
-    output:
+    input: "results/cubes/{year}/{tile}/{scene}.tif"
+    output: "results/cubes/{year}/{tile}/{scene}_NDVI.tif"
     container:
         "docker://ghcr.io/osgeo/gdal:ubuntu-full-latest"
     shell:
-        "gdal_calc.py -A {input} -A_band=5 -B {input} -B_band=4 --calc='(A - B)/(A + B)' --type np.float32 --outfile={output} -co 'COMPRESS=DEFLATE' -co 'PREDICTOR=3'"
+        "gdal_calc.py --quiet -A {input} --A_band 5 -B {input} --B_band 4 --calc='(A - B)/(A + B)' "
+        "--type Float32 --outfile={output} --creation-option 'COMPRESS=DEFLATE' --creation-option 'PREDICTOR=3'"
 
+# TODO this would need to be executed per tile per year => How do I connect this rule to the vegetation_index one above??
 rule max_vegetation_index:
-    # TODO this would need to be executed per tile per year
     # These are just ideas, no need to actually use them but they can ofc
-    input:
-    output:
+    input: "results/cubes/{year}/{tile}"
+    output: "results/cubes/{year}/{tile}/{year}-{tile}-NDVI_MAX.tif"
     container:
         "docker://ghcr.io/osgeo/gdal:ubuntu-full-latest"
     shell:
-        "gdal_calc.py -A {input} --outfile={output} --calc='max(A, axis=0)'-co 'COMPRESS=DEFLATE' -co 'PREDICTOR=3'"
+        "gdal_calc.py -A {input}/*_NDVI.tif --outfile={output} --calc='max(A, axis=0)' --creation-option 'COMPRESS=DEFLATE' --creation-option 'PREDICTOR=3'"
 
-rule circles:
-    # TODO this would need to be executed per tile per year
-    input:
-    output:
-    shell:
-        ""
+# rule circles:
+#     # TODO this would need to be executed per tile per year
+#     input:
+#     output:
+#     shell:
+#         ""
 
-rule real_coords:
-    input:
-    output:
-    shell:
-        ""
+# rule real_coords:
+#     input:
+#     output:
+#     shell:
+#         ""
 
-# TODO there's a rule missing which consolidates data again?! Not quite sure actually
+# # TODO there's a rule missing which consolidates data again?! Not quite sure actually
 
-rule maps:
-    input:
-    output:
-    shell:
-        ""
+# rule maps:
+#     input:
+#     output:
+#     shell:
+#         ""
 
-rule accuracy_assessment:
-    input:
-    output:
-    shell:
-        ""
+# rule accuracy_assessment:
+#     input:
+#     output:
+#     shell:
+#         ""
 
-rule render_report:
-    input: "report/whatever.md", ...
-    output: "results/final-report.pdf"
-    shell:
-        "pandoc -o {output} {input}"
+# rule render_report:
+#     input: "report/whatever.md", ...
+#     output: "results/final-report.pdf"
+#     shell:
+#         "pandoc -o {output} {input}"

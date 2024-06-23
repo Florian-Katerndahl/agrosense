@@ -143,7 +143,15 @@ def main() -> int:
         dest="output",
         type=str,
         required=True,
-        help="Name of output file, stored in 'directory'.",
+        help="Name of output file, stored in 'output_dir'.",
+    )
+    parser.add_argument(
+        "--output-dir",
+        dest="output_dir",
+        type=str,
+        required=False,
+        default=".",
+        help="Optional output directory where 'output' is stored."
     )
     parser.add_argument("fileglob", type=str, help="File glob/name of multiband image.")
     parser.add_argument(
@@ -179,10 +187,11 @@ def main() -> int:
         S.raw = S.raw * args.scale
 
     S.metadata.update(
-        dtype=rout_dtype, compress="DEFLATE", nodata=nodata_value, predictor=predictor
+        dtype=rout_dtype, compress="DEFLATE", nodata=nodata_value, predictor=predictor,
+        count=S.raw.shape[0]
     )
 
-    with rio.open(args.directory + "/" + args.output, "w", **S.metadata) as ds:
+    with rio.open(args.output_dir + "/" + args.output, "w", **S.metadata) as ds:
         ds.write(S.raw.astype(rout_dtype))
 
     return 0

@@ -2,9 +2,10 @@ __pycache__
 .DS_Store
 poetry.lock
 
-test-data/
-test-data_2/
+resources/
+results/
 .snakemake/
 .venv/
+.parallel/
 dist/
 
