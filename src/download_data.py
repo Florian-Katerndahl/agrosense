@@ -1,42 +1,66 @@
-from landsatxplore.api import API
-from landsatxplore.earthexplorer import EarthExplorer
+from argparse import ArgumentParser
+from downloader import search_and_download_data
+from typing import List, Tuple
 
-# login to API and EarthExplorer
-username = "RSE_P2_open"  # username for USGS account
-password = "jerqez-kujKes-qopra0"  # password for USGS account
-api = API(username, password)  # API instance for Log-In
-earth_explorer = EarthExplorer(username, password)  # EarthExplorer instance for Log-In
 
-# coordinates for polygon defining the chosen area around Haradh
-coordinates = [(24.5646, 49.0965), (24.5046, 49.4907), (24.2269, 49.4591), (24.0176, 49.4501), (23.9354, 49.3671), 
-               (23.7137, 49.3753), (23.4935, 49.2579), (23.2956, 49.4501), (23.1479, 49.440), (22.9887, 49.5126), 
-               (22.8445, 49.2737), (22.9230, 49.1226), (23.0696, 49.1364), (23.1883, 48.8589), (23.4506, 48.8644), 
-               (23.5917, 48.9771), (23.8959, 48.6530), (24.2920, 48.6530), (24.6046, 48.8727)]
+def main() -> None: 
+    parser = ArgumentParser(
+        description="This program is used to search and download Landsat images using landsatxplore."
+        "It requires the username and password from an USGS account."
+    )
+    parser.add_argument(
+        "--username", 
+        type=str, 
+        required=True, 
+        help="Your USGS username."
+    )
 
-# defining the bounding box out of the coordinates
-latitudes = [coordinate[0] for coordinate in coordinates]
-longitudes = [coordinate[1] for coordinate in coordinates]
-bounding_box = [min(longitudes), min(latitudes), max(longitudes), max(latitudes)] # [48.653, 22.8445, 49.5126, 24.6046]
+    parser.add_argument(
+        "--password", 
+        type=str,
+        required=True,
+        help="Your USGS password."
+    )
+    parser.add_argument(
+        "--coordinates",
+        type=float,
+        required=True,
+        nargs="+",
+        help="Coordinates for your chosen area in the format latitude_1 longitude_1 latitude_2 longitude_2 ..."
+    )
+    parser.add_argument(
+        "--start-date",
+        type=str,
+        required=False, 
+        help="Enter the start date in the format YYYY-MM-DD."
+    )
+    parser.add_argument(
+        "--end-date",
+        type=str,
+        required=False,
+        help="Enter the end date in the format YYYY-MM-DD."
+    )
+    parser.add_argument(
+        "--max-cloud-cover", 
+        type=int,
+        required=False, 
+        help="The maximum cloud cover percentage (0-100%)."
+    )
+    parser.add_argument(
+        "--max-results", 
+        type=int,
+        required=False,
+        help="The number of maximal resulting scenes (0-50000)."
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=str, 
+        required=False,
+        help="Your output directory to store the downloaded scenes."
+    )
 
-# Search for data within two different datasets for the time period 2015-01-01 until 2020-12-31
-"""
-We chose the Landsat 8/9 Collection 2, that started in 2013 and is still active. For this satellite there are 439 scenes found for the chosen area and time period.
-For the dataset Level 2 was chosen as it includes additional corrections to remove atmospheric effects.
-Landsat 5 and 9 were/are active previously or afterwards our chosen timeslot. 
-Landsat 7 ETM+ Collection 2 has some technical issues since 2019 and due to data storage space we decided to only choose one dataset.
-"""
-scenes = api.search(
-    max_results = 1000, 
-    dataset = 'landsat_ot_c2_l2', 
-    start_date = '2015-01-01', 
-    end_date = '2020-12-31', 
-    max_cloud_cover = 10, # maximum cloud coverage of 10% to assure clear detection
-    bbox = bounding_box)
+    args = parser.parse_args()
 
-# downloading each found scene
-for scene in scenes:
-    earth_explorer.download(scene['landsat_product_id'], output_dir='./data')
+    coordinates: List[Tuple[float, float]] = [(args.coordinates[i], args.coordinates[i + 1]) for i in range(0, len(args.coordinates),2)]
 
-# Logout of API and EarthExplorer
-api.logout()
-earth_explorer.logout()
+    search_and_download_data(args.username, args.password, coordinates, args.start_date, args.end_date, args.max_cloud_cover, args.max_results, args.output_dir)
