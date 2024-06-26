@@ -98,7 +98,7 @@ process CUBE {
     // TODO we need a tile-allow list, if we're using a bounding box to disregard unneeded data?
     """
     force-cube -s ${params.cube_resolution} -o . -j ${params.force_threads} -t ${params.cube_dtype} $stacked
-    rename -e 's/(LC0[89])_L2SP_\\d{6}_(\\d{8})_.*/\$1_\$2.tif/' **/*.tif
+    rename -e 's/(LC0[89])_L2SP_(\\d{6})_(\\d{8})_.*/\$1_\$2_\$3.tif/' **/*.tif
     """
 }
 
@@ -123,9 +123,14 @@ workflow preprocess {
         | combine(cube_channel)
         | CUBE
         | flatten
-        // put into funtion? is tile id, year, file
-        | map{ it -> [it[-2].toString(), it[-1].toString().tokenize('.')[0].tokenize('_')[1][0..3], it]}
-        | collect(flat: false)
+        // put into funtion? is tile id, platform, wrs, date, year, file
+        | map{ it -> [it[-2].toString(),
+                      it[-1].toString().tokenize('.')[0].tokenize('_')[0],
+                      it[-1].toString().tokenize('.')[0].tokenize('_')[1],
+                      it[-1].toString().tokenize('.')[0].tokenize('_')[2],
+                      it[-1].toString().tokenize('.')[0].tokenize('_')[2][0..3],
+                      it]}
+        // | collect(flat: false)
     
     emit:
     preprocessed_channel
