@@ -1,6 +1,6 @@
 process DOWNLOAD {
     input:
-    tuple path(aoi), val(start_date), val(end_date), val(sensors)
+    tuple path(aoi), val(start_date), val(end_date)
     
     output:
     
@@ -20,95 +20,113 @@ process UNPACK {
     script:
     scene_identifier = tar[-1].toString().tokenize('.')[0]
     """
-    mkdir ${scene_identifier}
-    tar -xf {input} -C {scene_identifier}
-    rm {scene_identifier}/*_ST*
-    rm {scene_identifier}/*.txt
+    mkdir $scene_identifier
+    tar -xf $tar -C $scene_identifier
+    rm $scene_identifier/*_ST*
+    rm $scene_identifier/*.txt
     """
 }
 
 process STACK {
+    label 'gdal'
+
     input:
+    tuple val(scene_identifier), path(unpacked)
     
     output:
+    tuple val(scene_identifier), path('stack')
     
     script:
     """
-    mkdir {output}
-    gdal_merge.py -q -separate -o {wildcards.scene}.tif {input}/*SR_B*.TIF
-    mv {wildcards.scene}.tif {output}
-    cp {input}/*_QA*.TIF {input}/*.xml {output}
+    mkdir stack
+    gdal_merge.py -q -separate -o ${scene_identifier}_stacked.tif $unpacked/*SR_B*.TIF
+    mv ${scene_identifier}_stacked.tif stack
+    cp $unpacked/*_QA*.TIF $unpacked/*.xml stack
     """
 }
 
 process TRANSFORM {
-    publishDir "${params.raw_directory}/${scene_identifier}", mode: 'symlink', overwrite: true, enabled: params.store_raw, pattern: "${scene_identifier}.tif"
+    // publishDir "${params.raw_directory}/${scene_identifier}", mode: 'symlink', overwrite: true, enabled: params.store_raw, pattern: "${scene_identifier}.tif"
     input:
-    tuple val(scene_identifier), path(raw_dir)
+    tuple val(scene_identifier), path(stack_dir)
     
     output:
     tuple val(scene_identifier), path("${scene_identifier}.tif")
     
     script:
-    // TODO PLATFORM in groovy, not bash? Though, I don't need this information outside of the script body...
     """
-    PLATFORM=$(basename {input}/{wildcards.scene}.tif | cut -d '_' -f1)
+    PLATFORM=\$(basename $stack_dir/${scene_identifier}_stacked.tif | cut -d '_' -f1)
     if [[ "\$PLATFORM" == 'LC09' || "\$PLATFORM" == 'LC08' ]];
     then
         SENSOR=OLI
     else
         SENSOR=TM
     fi
-    preprocess --platform \$SENSOR -o ${scene_identifier}.tif ${scene_identifier}.tif $raw_dir
+    ls $stack_dir
+    preprocess --platform \$SENSOR -o ${scene_identifier}.tif ${scene_identifier}_stacked.tif $stack_dir
     """
 }
 
 process CUBE_INIT {
-    // usually, this is not good practice to modify the input of a process, let's see...
+    publishDir params.cube_directory, mode: 'copy', overwrite: true, enabled: params.store_cube
+    label 'force'
+
     input:
-    tuple path(cube), val(cube_origin), val(cube_projections)
+    val(cube_origin)
+    val(cube_projection)
+    
     output:
-    path(cube, type: 'dir')
+    path('datacube-definition.prj')
+    
     script:
     """
-    mkdir -p cube
-    force-cube-init -d ${cube} -o ${cube_origin.join(',')} ${cube_projections}
+    force-cube-init -d . -o ${cube_origin.join(',')} '${cube_projection}'
     """
 }
-// TODO check what David in Rangeland
 
 process CUBE {
     publishDir params.cube_directory, mode: 'copy', overwrite: true, enabled: params.store_cube
+    label 'force'
 
     input:
-    tuple path(raw), path(cube)
+    tuple val(scene_identifier), path(stacked), path(projection)
     
     output:
-    // usually, this is not good practice to modify the input of a process, let's see...
-    path(cube, type: 'dir')
+    path('**/*.tif', includeInputs: false)
     
     script:
-    // TODO ahh, what were the string interpolation rules for nextflow again?
-        // TODO Couldn't I have simply multiple CUBEs, one for each year which all depend on a process called CUBE_INIT (creating the datacube.prj). Actually, if I have a process for initializing the cube directory, I wouldn't need any aggregation and could simply cube each scene indepently
-    // TODO we need a tile-allow list, if we're using a bounding box to disregard unneeded data
+    // TODO we need a tile-allow list, if we're using a bounding box to disregard unneeded data?
     """
-    force-cube -s ${paras.cube_resolution} ${raw} -o ${cube} -j {params.force_threads} -t ${params.cube_dtype}
+    force-cube -s ${params.cube_resolution} -o . -j ${params.force_threads} -t ${params.cube_dtype} $stacked
+    rename -e 's/(LC0[89])_L2SP_\\d{6}_(\\d{8})_.*/\$1_\$2.tif/' **/*.tif
     """
 }
 
 workflow preprocess {
     take:
+    // aoi
+    // begin
+    // end
     
     main:
-    preprocess_channel = Channel.from_...()
-        | DOWNLOAD
+    cube_channel = CUBE_INIT(params.cube_origin, params.cube_projection)
+
+    // transformed_channel = Channel.of([aoi, begin, end])
+    //     | DOWNLOAD
+    transformed_channel = Channel.fromPath("/home/florian/git-repos/agrosense/resources/landsat/*.tar")
         | flatten
         | UNPACK
         | STACK
         | TRANSFORM
-        | collect
+    
+    preprocessed_channel = transformed_channel
+        | combine(cube_channel)
         | CUBE
+        | flatten
+        // put into funtion? is tile id, year, file
+        | map{ it -> [it[-2].toString(), it[-1].toString().tokenize('.')[0].tokenize('_')[1][0..3], it]}
+        | collect(flat: false)
     
     emit:
-    
+    preprocessed_channel
 }
