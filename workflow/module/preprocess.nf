@@ -84,6 +84,16 @@ process CUBE_INIT {
     """
 }
 
+
+/* This process takes as input a single channel, each entry comprising of a tuple with three entries
+ * The process outputs files according to the specified glob pattern.
+ * The script body is executed inside the docker image (or locally, when container support is turned off)
+ * or the underlying execution environment requires images (e.g. K8s), similar to Snakemake, any file content
+ * that starts with a Shebang could also be supplied; bash is simply assumed by default.
+ * The process output usually never leaves a working directory whih is assumed to be non-persistent in the
+ * sense that it can be deleted at any point. It's used for caching processing steps. Using the publishDir
+ * directive, outputs are saved to a pre-defined folder outside of the working directory.
+*/
 process CUBE {
     publishDir params.cube_directory, mode: 'copy', overwrite: true, enabled: params.store_cube
     label 'force'
@@ -102,6 +112,10 @@ process CUBE {
     """
 }
 
+
+/* A subworkflow can take arguments (values, channels, etc.); the actual work is done in the
+ * main section and any output of a subworkflow is defined in the emit section
+*/
 workflow preprocess {
     take:
     // aoi
@@ -109,8 +123,10 @@ workflow preprocess {
     // end
     
     main:
+    // call a process with the expected number of inputs; a process always outputs a channel
     cube_channel = CUBE_INIT(params.cube_origin, params.cube_projection)
 
+    // | is the pipe oprator and offers (I'd say) a readable way of connecting processes with channels
     // transformed_channel = Channel.of([aoi, begin, end])
     //     | DOWNLOAD
     transformed_channel = Channel.fromPath("/home/florian/git-repos/agrosense/resources/landsat/*.tar")
@@ -119,18 +135,21 @@ workflow preprocess {
         | STACK
         | TRANSFORM
     
+    /* combine, flatten and map are channel operators. that is, they do not do any computational work
+     * but are used to transform either channels (combine, flatten) or their entries (map).
+     * In case of the map operator, an additional closure is passed
+    */
     preprocessed_channel = transformed_channel
         | combine(cube_channel)
         | CUBE
         | flatten
-        // put into funtion? is tile id, platform, wrs, date, year, file
+        // tile id, platform, wrs, date, year, file
         | map{ it -> [it[-2].toString(),
                       it[-1].toString().tokenize('.')[0].tokenize('_')[0],
                       it[-1].toString().tokenize('.')[0].tokenize('_')[1],
                       it[-1].toString().tokenize('.')[0].tokenize('_')[2],
                       it[-1].toString().tokenize('.')[0].tokenize('_')[2][0..3],
                       it]}
-        // | collect(flat: false)
     
     emit:
     preprocessed_channel

@@ -1,5 +1,5 @@
 process NDVI {
-    // this can be implemented dynamically to allow for arbitrary spectral indices, see geoflow for how
+    // this can be implemented dynamically to allow for arbitrary spectral indices, see geoflow for a how-to
     label 'gdal'
 
     input:
@@ -28,6 +28,7 @@ process STM {
     tuple val(tileId), val(year), path("${tileId}_${year}_max_NDVI.tif")
 
     script:
+    // Groovy can be mixed in; values created here can also be used in the output directive above
     // WARN value range hard coded for NDVI
     if (!(ndvis instanceof List)) {
     """
@@ -76,7 +77,7 @@ workflow higher_level {
     main:
     aggregated_ndvi = preprocessed_images
         | NDVI
-        | groupTuple(by: [0, 4])
+        | groupTuple(by: [0, 4]) // if no group size is given, calls to groupTuple are blocking
         | STM
         | groupTuple(by: [1])
         | VRT 

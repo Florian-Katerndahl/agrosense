@@ -3,6 +3,10 @@ include { higher_level } from './module/higher_level.nf'
 // include { machine_learning } from './module/machine_learning.nf'
 // include { reports } from './module/reports.nf'
 
+/* An unnamed workflow is the main entry point by default for Nextflow workflows.
+ * Named workflows, like the ones below, are subworkflows similar to how they exist in Snakemake
+ * Comments reagarding Nextflow are added mainly in the preprocess workflow
+*/
 workflow {
     cube_channel = preprocess()
 
