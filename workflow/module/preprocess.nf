@@ -136,7 +136,8 @@ workflow preprocess {
         | TRANSFORM
     
     /* combine, flatten and map are channel operators. that is, they do not do any computational work
-     * but are used to transform either channels (combine, flatten) or their entries (map).
+     * but are used to transform either all channel elements at once (combine, flatten) or
+     * individually (map).
      * In case of the map operator, an additional closure is passed
     */
     preprocessed_channel = transformed_channel
