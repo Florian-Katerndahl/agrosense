@@ -17,8 +17,7 @@ process NDVI {
 }
 
 process STM {
-    // TODO make this a parameter as well
-    publishDir "/home/eouser/git-repos/agrosense/ndvi/${year}/tifs", mode: 'copy', overwrite: true
+    publishDir "${params.stm_directory}/${year}/tifs", mode: 'copy', overwrite: true
     label 'gdal'
 
     input:
@@ -49,9 +48,7 @@ process STM {
 }
 
 process VRT {
-    // TODO make this a parameter as well
-    // meh, not the nicest file structure, but whatever
-    publishDir "/home/eouser/git-repos/agrosense/ndvi/${year}", mode: 'copy', overwrite: true
+    publishDir "${params.stm_directory}/${year}", mode: 'copy', overwrite: true
     label 'gdal'
 
     input:
