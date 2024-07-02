@@ -98,8 +98,7 @@ process CUBE {
     label 'force'
 
     input:
-    tuple val(scene_identifier), path(stacked)
-    each path(projection)
+    tuple val(scene_identifier), path(stacked), path(projection)
     
     output:
     path('**/*.tif', includeInputs: false)
@@ -129,18 +128,19 @@ workflow preprocess {
     // | is the pipe oprator and offers (I'd say) a readable way of connecting processes with channels
     // transformed_channel = Channel.of([aoi, begin, end])
     //     | DOWNLOAD
-    transformed_channel = Channel.fromPath("/home/florian/git-repos/agrosense/resources/landsat/*.tar")
+    transformed_channel = Channel.fromPath("/mnt/eolab-volume/agrosense/resources/landsat/*.tar")
         | flatten
         | UNPACK
         | STACK
         | TRANSFORM
-    
     /* combine, flatten and map are channel operators. that is, they do not do any computational work
      * but are used to transform either all channel elements at once (combine, flatten) or
      * individually (map).
      * In case of the map operator, an additional closure is passed
     */
-   preprocessed_channel = CUBE(transformed_channel, cube_channel)
+    preprocessed_channel = transformed_channel
+        | combine(cube_channel)
+        | CUBE
         | flatten
         // tile id, platform, wrs, date, year, file
         | map{ it -> [it[-2].toString(),

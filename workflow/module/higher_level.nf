@@ -18,7 +18,7 @@ process NDVI {
 
 process STM {
     // TODO make this a parameter as well
-    publishDir "/home/florian/git-repos/agrosense/ndvi/${year}/tifs", mode: 'copy', overwrite: true
+    publishDir "/home/eouser/git-repos/agrosense/ndvi/${year}/tifs", mode: 'copy', overwrite: true
     label 'gdal'
 
     input:
@@ -51,7 +51,7 @@ process STM {
 process VRT {
     // TODO make this a parameter as well
     // meh, not the nicest file structure, but whatever
-    publishDir "/home/florian/git-repos/agrosense/ndvi/${year}", mode: 'copy', overwrite: true
+    publishDir "/home/eouser/git-repos/agrosense/ndvi/${year}", mode: 'copy', overwrite: true
     label 'gdal'
 
     input:
@@ -79,7 +79,7 @@ workflow higher_level {
         | NDVI
         | groupTuple(by: [0, 4]) // if no group size is given, calls to groupTuple are blocking
         | STM
-        | groupTuple(by: [1])
+        | groupTuple(by: 1)
         | VRT 
 
     emit:
