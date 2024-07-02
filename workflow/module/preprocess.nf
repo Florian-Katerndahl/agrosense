@@ -28,6 +28,7 @@ process UNPACK {
 }
 
 process STACK {
+    label 'largeMemory'
     label 'gdal'
 
     input:
@@ -47,6 +48,7 @@ process STACK {
 
 process TRANSFORM {
     // publishDir "${params.raw_directory}/${scene_identifier}", mode: 'symlink', overwrite: true, enabled: params.store_raw, pattern: "${scene_identifier}.tif"
+    label 'largeMemory'
     input:
     tuple val(scene_identifier), path(stack_dir)
     
