@@ -62,7 +62,6 @@ process TRANSFORM {
     else
         SENSOR=TM
     fi
-    ls $stack_dir
     preprocess --platform \$SENSOR -o ${scene_identifier}.tif ${scene_identifier}_stacked.tif $stack_dir
     """
 }
@@ -99,7 +98,8 @@ process CUBE {
     label 'force'
 
     input:
-    tuple val(scene_identifier), path(stacked), path(projection)
+    tuple val(scene_identifier), path(stacked)
+    each path(projection)
     
     output:
     path('**/*.tif', includeInputs: false)
@@ -140,9 +140,7 @@ workflow preprocess {
      * individually (map).
      * In case of the map operator, an additional closure is passed
     */
-    preprocessed_channel = transformed_channel
-        | combine(cube_channel)
-        | CUBE
+   preprocessed_channel = CUBE(transformed_channel, cube_channel)
         | flatten
         // tile id, platform, wrs, date, year, file
         | map{ it -> [it[-2].toString(),
