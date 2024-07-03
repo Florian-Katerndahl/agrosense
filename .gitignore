@@ -14,3 +14,4 @@ work/
 .nextflow.log*
 cube/
 wf-meta/
+ndvi/
