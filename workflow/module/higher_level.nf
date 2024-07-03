@@ -64,7 +64,6 @@ process VRT {
     mv ${ndvis.join(' ')} tifs
     gdalbuildvrt output.vrt tifs/*.tif
     """
-
 }
 
 workflow higher_level {
@@ -72,7 +71,7 @@ workflow higher_level {
     preprocessed_images
     
     main:
-    aggregated_ndvi = preprocessed_images
+    preprocessed_images
         | NDVI
         | groupTuple(by: [0, 4]) // if no group size is given, calls to groupTuple are blocking
         | STM
@@ -80,5 +79,7 @@ workflow higher_level {
         | VRT 
 
     emit:
-    aggregated_ndvi
+    stm_chips     = STM.out
+    vrt_overviews = VRT.out
 }
+
