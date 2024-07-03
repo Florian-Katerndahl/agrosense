@@ -130,7 +130,7 @@ workflow preprocess {
     // | is the pipe oprator and offers (I'd say) a readable way of connecting processes with channels
     // transformed_channel = Channel.of([aoi, begin, end])
     //     | DOWNLOAD
-    transformed_channel = Channel.fromPath("/mnt/eolab-volume/agrosense/resources/landsat/*.tar")
+    transformed_channel = Channel.fromPath("${params.output_directory}/resources/landsat/*.tar")
         | flatten
         | UNPACK
         | STACK
