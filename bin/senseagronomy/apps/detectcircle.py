@@ -5,6 +5,16 @@ import os
 import json
 
 
+def generate_circle_points(center_x, center_y, radius, num_points=100):
+    """Generate (x, y) points around the circumference of a circle."""
+    points = []
+    for i in range(num_points):
+        theta = 2 * np.pi * i / num_points
+        x = center_x + radius * np.cos(theta)
+        y = center_y + radius * np.sin(theta)
+        points.append((x, y))  # Keep coordinates as float
+    return points
+
 def detect_circles(filename):
     # Loads an image
     src = cv.imread(cv.samples.findFile(filename), cv.IMREAD_COLOR)
@@ -18,20 +28,18 @@ def detect_circles(filename):
     rows = gray.shape[0]
     circles = cv.HoughCircles(gray, cv.HOUGH_GRADIENT, 1, rows / 8, param1=100, param2=30, minRadius=0, maxRadius=0)
 
-    circle_list = []
+    circle_points = []
 
     if circles is not None:
-        circles = np.uint16(np.around(circles))
+        circles = np.around(circles)  # Avoid conversion to uint16
         for i in circles[0, :]:
-            x = int(i[0])  # Convert to native Python int
-            y = int(i[1])  # Convert to native Python int
-            radius = int(i[2])  # Convert to native Python int
-            circle_list.append({'x': x, 'y': y, 'radius': radius})
-            # Optional: Draw the circles on the image
-            cv.circle(src, (x, y), 1, (0, 100, 100), 3)  # circle center
-            cv.circle(src, (x, y), radius, (255, 0, 255), 3)  # circle outline
+            center_x = i[0]  # Keep as float
+            center_y = i[1]  # Keep as float
+            radius = i[2]  # Keep as float
+            points = generate_circle_points(center_x, center_y, radius)
+            circle_points.append(points)
 
-    return circle_list
+    return circle_points
 
 
 def main():
@@ -58,13 +66,19 @@ def main():
     image_files = [os.path.join(args.images_directory_path, f) for f in os.listdir(args.images_directory_path) if os.path.isfile(os.path.join(args.images_directory_path, f))]
 
     coordinates = {}
-    for filename in image_files:
-        circles = detect_circles(filename)
-        if circles is not None:
-            coordinates[filename] = circles
+    for filepath in image_files:
+        # Extract the file name from the full path
+        filename = os.path.basename(filepath)
+        circle_points = detect_circles(filepath)
+        if circle_points is not None:
+            coordinates[filename] = circle_points
 
     # Write the coordinates to a JSON file
     with open(args.output_file, 'w') as json_file:
         json.dump(coordinates, json_file, indent=4)
 
     return 0
+
+
+if __name__ == "__main__":
+    main()
