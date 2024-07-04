@@ -1,6 +1,7 @@
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 import cv2 as cv
 import numpy as np
+import os
 
 def detect_circles(filename):
 
@@ -10,7 +11,6 @@ def detect_circles(filename):
     # Check if image is loaded fine
     if src is None:
         print ('Error opening image!')
-        print ('Usage: hough_circle.py [image_name -- default ' + default_file + '] \n')
         return -1
 
     gray = cv.cvtColor(src, cv.COLOR_BGR2GRAY)
@@ -18,9 +18,7 @@ def detect_circles(filename):
     gray = cv.medianBlur(gray, 5)
 
     rows = gray.shape[0]
-    circles = cv.HoughCircles(gray, cv.HOUGH_GRADIENT, 1, rows / 8,
-    param1=100, param2=30,
-    minRadius=1, maxRadius=30)
+    circles = cv.HoughCircles(gray, cv.HOUGH_GRADIENT, 1, rows / 8, param1=100, param2=30, minRadius=1, maxRadius=30)
 
 
     if circles is not None:
@@ -34,7 +32,6 @@ def detect_circles(filename):
         radius = i[2]
         cv.circle(src, center, radius, (255, 0, 255), 3)
 
-    print(src)
     return src
 
 def main():
@@ -44,16 +41,19 @@ def main():
         description="This program is used to detect circles "
     )
     parser.add_argument(
-        '--image-path',
+        '--images-directory-path',
         type=str,
-        nargs='*',
+        nargs=1,
         required=True, 
-        default='../../scenes/img.png', 
-        help='Path to the image file'
+        help='Path to the images directory'
     )
 
     args = parser.parse_args()
-    for filename in args.image_path:
+
+    # List all files in the directory
+    image_files = [os.path.relpath(os.path.join(args.images_directory_path[0], f)) for f in os.listdir(args.images_directory_path[0]) if os.path.isfile(os.path.join(args.images_directory_path[0], f))]
+
+    for filename in image_files:
         detect_circles(filename)
 
     return 0
