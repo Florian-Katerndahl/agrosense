@@ -5,7 +5,7 @@ import os
 import json
 
 
-def generate_circle_points(center_x, center_y, radius, num_points=100):
+def generate_circle_points(center_x, center_y, radius, num_points=360):
     """Generate (x, y) points around the circumference of a circle."""
     points = []
     for i in range(num_points):
@@ -13,6 +13,10 @@ def generate_circle_points(center_x, center_y, radius, num_points=100):
         x = center_x + radius * np.cos(theta)
         y = center_y + radius * np.sin(theta)
         points.append((x, y))  # Keep coordinates as float
+    
+    if points:
+        points.append(points[0])
+
     return points
 
 def detect_circles(filename):
@@ -78,7 +82,3 @@ def main():
         json.dump(coordinates, json_file, indent=4)
 
     return 0
-
-
-if __name__ == "__main__":
-    main()
