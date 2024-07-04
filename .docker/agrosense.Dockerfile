@@ -11,7 +11,6 @@ WORKDIR /home/root/agrosense/
 ADD bin/ bin/
 ADD pyproject.toml .
 ADD README.md .
-ADD scenes/ scenes/
 
 RUN poetry install --without workflow && \
     poetry build --format wheel

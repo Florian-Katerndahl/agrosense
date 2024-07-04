@@ -18,6 +18,7 @@ packages = [
 
 [tool.poetry.scripts]
 preprocess = 'senseagronomy.apps.preprocess:main'
+detectcircle = 'senseagronomy.apps.detectcircle:main'
 
 [tool.poetry.dependencies]
 python = "^3.11"
