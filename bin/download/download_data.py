@@ -1,9 +1,51 @@
+#!/usr/bin/env python3
+
+"""
+This script contains the 'main' function which is the entry point of the
+program.
+
+The 'main' function parses command line arguments, retrieves the necessary
+credentials, validates coordinates, and invokes the search and download of
+the data. The program utilizes landsatxplore to search for and download
+Landsat 8/9 Collection 2 Level 2 images.
+"""
+
 from argparse import ArgumentParser
 from downloader import search_and_download_data, get_credentials
 from typing import List, Tuple
 
 
 def main() -> int:
+    """
+    This function runs the program. It parses command line arguments,
+    retrieves credentials, validates coordinates, and calls the function
+    to search and download Landsat images using landsatxplore.
+
+    Command line arguments:
+        --username: Your USGS username. Optional.
+        --password: Your USGS password. Optional.
+        --coordinates: Coordinates for the chosen area. Required.
+        --start-date: The start date for the search in the format
+                      YYYY-MM-DD. Optional.
+        --end-date: The end date for the search in the format
+                    YYYY-MM-DD. Optional.
+        --max-cloud-cover: The maximum cloud cover percentage (0-100%).
+                           Optional.
+        --max-results: The number of maximal resulting scenes (0-50000).
+                       Optional.
+        --output-dir: The output directory to store the downloaded scenes.
+                      Optional.
+        --download: Whether the user wants to download the found scenes.
+                    Default is True.
+
+    Returns:
+        int: Returns 0 if the program runs successfully.
+
+    Raises:
+        ValueError: If either a latitude or longitude variable of a given
+                    coordinate is missing.
+        ValueError: If at least one coordinate is not given.
+    """
     # create command line parser
     parser = ArgumentParser(
         description="This program is used to search and download Landsat"

@@ -1,3 +1,20 @@
+#!/usr/bin/env python3
+
+"""
+This script contains three functions: 'get_credentials', 'get_bounding_box',
+and 'search_and_download_data'.
+
+'get_credentials' is responsble for obtainting the username and password
+either from the arguments passed or from the environment variables.
+
+'get_bounding_box' calculates the bounding box for a given list of
+coordinates.
+
+'search_and_download_data' logs into the USGS API and EarthExplorer with the
+provided credentials, performs a search based on the specified parameters,
+and optionally downloads the found scenes.
+"""
+
 import os
 
 from datetime import datetime
@@ -7,6 +24,26 @@ from typing import List, Tuple
 
 
 def get_credentials(args):
+    """
+    This function retrieves the username and password from the provided
+    arguments. If the username or password is not provided, it attempts
+    to retrieve them from the environment variables.
+
+    Parameters:
+        args (object): An object that contains the username and password
+                       as attributes.
+
+    Returns:
+        tuple (tuple): A tuple contraining username and password as strings.
+
+    Raises:
+        ValueError: If the username or password is not provided either as an
+                    argument or as an environment variable.
+    
+    Note:
+        If username and password are saved in environment variables the names
+        'USGS_USERNAME' and 'USGS_PASSWORD' should be used.
+    """
     # retrieve username and password from arguments
     username = args.username
     password = args.password
@@ -25,6 +62,18 @@ def get_credentials(args):
 
 
 def get_bounding_box(coordinates: List[Tuple[float, float]]) -> List[float]:
+    """
+    This function calculates the bounding box for a given list of coordinates.
+
+    Parameters:
+        coordinates (List[Tuple[float, float]]): A list of tuples where each
+        tuple represents a pair of latitude and longitude for one coordinate.
+
+    Returns:
+        bounding_box (List[float]): A list of four float values representing
+        the bounding box. The order ist minimal longitude, minimal latitude,
+        maximal longitude and maximal latitude.
+    """
     # collect latitudes and longitudes separately from input
     latitudes = [coordinate[0] for coordinate in coordinates]
     longitudes = [coordinate[1] for coordinate in coordinates]
@@ -41,6 +90,44 @@ def search_and_download_data(username: str, password: str,
                              max_cloud_cover: int = 10,
                              max_results: int = 100,
                              download: bool = True) -> None:
+    """
+    This function logs into the USGS API and EarthExplorer with the provided
+    username and password, searches for scenes of the Landsat satellite based
+    on the provided parameters, optionally downloads each found scene, and
+    then logs out of the USGS API and EarthExplorer. It previously varifys the
+    input for 'max_results', 'max_cloud_cover', 'coordinates', 'start_date'
+    and 'end_date'.
+
+    Parameters:
+        username (str): The username for the USGS API and EarthExplorer.
+        password (str): The password for the USGS API and EarthExplorer.
+        coordinates (List[Tuple[float, float]]): A list of tuples where each
+            tuple represents a pair of latitude and longitude for one
+            coordinate.
+        start_date (str): The start date for the search in the
+            format 'YYYY-MM-DD'.
+        end_date (str): The end date for the search in the
+            format 'YYYY-MM-DD'.
+        output_dir (str): The directory where the downloaded scenes
+            will be saved.
+        max_cloud_cover (int): The maximum cloud cover percentage for
+            the search. Default is 10
+        max_results (int): The maximum number of results to return from
+            the search. Default is 100.
+        download (bool): Whether to download the found scenes.
+            Default is True.
+
+    Returns:
+        None
+
+    Raises:
+        ValueError: If max_results is not between 0 and 50000.
+        ValueError: If max_cloud_cover is not between 0 and 100.
+        ValueError: If each coordinate is not a tuple of two elements.
+        ValueError: If latitude or longitude value is invalid.
+        ValueError: If start_date is not before end_date.
+        ValueError: If at least one coordinate pair is not given.
+    """
     # Input Validation
     # check range of max_cloud_cover and max_results after converting into int
     if max_results is not None:
