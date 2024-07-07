@@ -41,3 +41,4 @@ def main() -> int:
         json.dump(coordinates, json_file)
 
     return 0
+

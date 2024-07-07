@@ -57,3 +57,4 @@ class CircleDetector:
         except (rasterio.errors.RasterioIOError, ValueError) as e:
             sys.stderr.write(f"Error opening or processing image: {filename}\n")
             return None
+
