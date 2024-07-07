@@ -30,7 +30,7 @@ def create_geodataframe(transformed_circles: list, crs: str) -> gpd.GeoDataFrame
     return gdf
 
 def save_geodataframe(gdf: gpd.GeoDataFrame, output_file: str) -> None:
-    gdf.to_file(output_file)
+    gdf.to_file(output_file, driver='GPKG')
 
 def main() -> None:
     parser = argparse.ArgumentParser(
@@ -74,7 +74,7 @@ def main() -> None:
 
     # Validate the number of origins, pixel sizes, and CRS
     if len(args.origins) % 2 != 0 or len(args.pixel_sizes) % 2 != 0 or len(args.crs) == 0:
-        print("Error: Origins and pixel sizes should be provided in pairs (x, y), and CRS should be provided for each image.")
+        sys.stderr.write("Error: Origins and pixel sizes should be provided in pairs (x, y), and CRS should be provided for each image.")
         sys.exit(1)
 
     num_images = len(args.origins) // 2
@@ -83,7 +83,7 @@ def main() -> None:
     crs_list = args.crs
     
     if len(crs_list) != num_images:
-        print("Error: The number of CRS provided should match the number of images.")
+        sys.stderr.write("Error: The number of CRS provided should match the number of images.")
         sys.exit(1)
     
     # Step 1: Read the JSON file
@@ -102,7 +102,7 @@ def main() -> None:
         
         coordinates[key] = transformed_circles  
 
-    # Step 3: Create a GeoDataFrame for each image and merge them
+    # Step 3: Create a GeoDataFrame for each image
     all_gdfs = []
     for image_index, (key, transformed_circles) in enumerate(coordinates.items()):
         gdf = create_geodataframe(transformed_circles, crs_list[image_index])
