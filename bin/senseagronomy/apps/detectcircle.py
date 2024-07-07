@@ -1,9 +1,10 @@
-from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
+from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter, Namespace
 from senseagronomy import CircleDetector
+from typing import List, Dict, Tuple
 import os
 import json
 
-def main():
+def main() -> int:
     parser = ArgumentParser(
         formatter_class=ArgumentDefaultsHelpFormatter,
         description="This program is used to detect circles in images and save their coordinates to a JSON file."
@@ -22,11 +23,11 @@ def main():
         help='Path to the output JSON file'
     )
 
-    args = parser.parse_args()
+    args: Namespace = parser.parse_args()
 
     detector = CircleDetector()
 
-    coordinates = {}
+    coordinates: Dict[str, List[List[Tuple[float, float]]]] = {}
 
     for filepath in args.input:
         # Extract the file name from the full path
