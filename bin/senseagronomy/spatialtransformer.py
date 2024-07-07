@@ -26,7 +26,7 @@ class SpatialTransformer:
             transformed_circle = []
             for x, y in circle:
                 spatial_x = x_origin + x * x_size
-                spatial_y = y_origin - y * y_size
+                spatial_y = y_origin + y * y_size
                 transformed_circle.append((spatial_x, spatial_y))
             transformed_circles.append(transformed_circle)
         return transformed_circles

@@ -3,7 +3,7 @@ import sys
 import pandas as pd
 import geopandas as gpd
 from senseagronomy import SpatialTransformer
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 
 def main() -> None:
     parser: ArgumentParser = ArgumentParser(
@@ -39,26 +39,21 @@ def main() -> None:
     parser.add_argument(
         '--crs',
         type=str,
-        nargs='+',
         required=True,
-        help='List of Coordinate Reference Systems (CRS) for each image.'
+        help='Coordinate Reference System (CRS).'
     )
 
     args: Namespace = parser.parse_args()
 
-    # Validate the number of origins, pixel sizes, and CRS
-    if len(args.origins) % 2 != 0 or len(args.pixel_sizes) % 2 != 0 or len(args.crs) == 0:
-        print("Error: Origins and pixel sizes should be provided in pairs (x, y), and CRS should be provided for each image.")
+    # Validate the number of origins and pixel sizes
+    if len(args.origins) % 2 != 0 or len(args.pixel_sizes) % 2 != 0:
+        sys.stderr.write("Error: Origins and pixel sizes should be provided in pairs (x, y).")
         sys.exit(1)
 
     num_images: int = len(args.origins) // 2
     origins: List[Tuple[float, float]] = [(args.origins[i * 2], args.origins[i * 2 + 1]) for i in range(num_images)]
     pixel_sizes: List[Tuple[float, float]] = [(args.pixel_sizes[i * 2], args.pixel_sizes[i * 2 + 1]) for i in range(num_images)]
-    crs_list: List[str] = args.crs
-    
-    if len(crs_list) != num_images:
-        print("Error: The number of CRS provided should match the number of images.")
-        sys.exit(1)
+    crs: str = args.crs
     
     transformer: SpatialTransformer = SpatialTransformer()
 
@@ -82,7 +77,7 @@ def main() -> None:
     # Step 3: Create a GeoDataFrame for each image and merge them
     all_gdfs: List[gpd.GeoDataFrame] = []
     for image_index, (key, transformed_circles) in enumerate(coordinates.items()):
-        gdf: gpd.GeoDataFrame = transformer.create_geodataframe(transformed_circles, crs_list[image_index])
+        gdf: gpd.GeoDataFrame = transformer.create_geodataframe(transformed_circles, crs)
         all_gdfs.append(gdf)
     
     # Merge all GeoDataFrames into one
