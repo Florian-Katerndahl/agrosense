@@ -68,9 +68,9 @@ workflow cropland_detection {
 
     main:
     DETECT_CIRCLES(stm_chips)
-        // | TRANSFORM_COORDINATES
-        // | groupTuple(by: 1)  // group by year
-        // | MERGE_CIRCLES
+        | TRANSFORM_COORDINATES
+        | groupTuple(by: 1)  // group by year
+        | MERGE_CIRCLES
         // | combine( path(validation_data) )
         // | ACCURACY_ASSESSMENT
 

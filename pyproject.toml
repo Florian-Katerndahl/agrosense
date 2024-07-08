@@ -19,6 +19,7 @@ packages = [
 [tool.poetry.scripts]
 preprocess = 'senseagronomy.apps.preprocess:main'
 detectcircle = 'senseagronomy.apps.detectcircle:main'
+transformcoordinates = 'senseagronomy.apps.transformcoordinates:main'
 downloadlandsat = 'senseagronomy.apps.download_data:main'
 
 [tool.poetry.dependencies]
@@ -30,6 +31,7 @@ numpy = "^1.26.4"
 numba = "^0.59.1"
 geopandas = "^0.14.4"
 opencv-contrib-python = "^4.10.0.82"
+shapely = "^2.0.4"
 landsatxplore = {git = "https://github.com/Florian-Katerndahl/landsatxplore.git"}
 
 
