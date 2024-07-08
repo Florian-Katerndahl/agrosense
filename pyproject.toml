@@ -19,6 +19,7 @@ packages = [
 [tool.poetry.scripts]
 preprocess = 'senseagronomy.apps.preprocess:main'
 detectcircle = 'senseagronomy.apps.detectcircle:main'
+downloadlandsat = 'senseagronomy.apps.download_data:main'
 
 [tool.poetry.dependencies]
 python = "^3.11"
@@ -29,10 +30,8 @@ numpy = "^1.26.4"
 numba = "^0.59.1"
 geopandas = "^0.14.4"
 opencv-contrib-python = "^4.10.0.82"
+landsatxplore = "^0.15.0"
 
-
-[tool.poetry.group.workflow.dependencies]
-snakemake = "^8.14.0"
 
 [build-system]
 requires = ["poetry-core"]

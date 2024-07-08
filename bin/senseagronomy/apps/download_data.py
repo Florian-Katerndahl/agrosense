@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """
 This script contains the 'main' function which is the entry point of the
 program.
@@ -11,7 +9,7 @@ Landsat 8/9 Collection 2 Level 2 images.
 """
 
 from argparse import ArgumentParser
-from downloader import search_and_download_data, get_credentials
+from senseagronomy.downloader import search_and_download_data, get_credentials
 from typing import List, Tuple
 
 
