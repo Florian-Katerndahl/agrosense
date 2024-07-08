@@ -1,12 +1,16 @@
 process DOWNLOAD {
-    input:
-    tuple path(aoi), val(start_date), val(end_date)
+    secret 'USGS_USERNAME'
+    secret 'USGS_PASSWORD'
     
     output:
+    path("*.tar")
     
     script:
     """
-    
+    download_data.py --username \$USGS_USERNAME -- password \$USGS_PASSWORD \
+        --coordinates ${coordinates.join(' ')} --start-date ${params.date_range["start"]} \
+        --end-date ${params.date_range["end"]} --max-results ${params.max_results} \
+        --max-cloud-cover ${params.max_cloud_cover} --output-dir .
     """
 }
 
@@ -119,9 +123,6 @@ process CUBE {
 */
 workflow preprocess {
     take:
-    // aoi
-    // begin
-    // end
     
     main:
     // call a process with the expected number of inputs; a process always outputs a channel
