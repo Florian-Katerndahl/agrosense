@@ -1,3 +1,5 @@
+include { cropland_detection } from './cropland_detection.nf'
+
 process NDVI {
     // this can be implemented dynamically to allow for arbitrary spectral indices, see geoflow for a how-to
     label 'gdal'
@@ -76,10 +78,15 @@ workflow higher_level {
         | groupTuple(by: [0, 4]) // if no group size is given, calls to groupTuple are blocking
         | STM
         | groupTuple(by: 1)
-        | VRT 
+        | VRT
+
+    // circle detection, accuaracy assessment
+    cropland_detection(STM.out, params.validation_data)
 
     emit:
     stm_chips     = STM.out
     vrt_overviews = VRT.out
+    detected_acres = cropland_detection.out.detected_acres
+    // accuaracy_acres = cropland_detection.out.accuaracy_acres
 }
 
