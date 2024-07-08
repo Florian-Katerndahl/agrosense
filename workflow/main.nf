@@ -1,10 +1,8 @@
 include { preprocess } from './module/preprocess.nf'
 include { higher_level } from './module/higher_level.nf'
-// include { machine_learning } from './module/machine_learning.nf'
-// include { reports } from './module/reports.nf'
+include { cropland_detection } from './module/cropland_detection.nf'
 
 /* An unnamed workflow is the main entry point by default for Nextflow workflows.
- * Workflows are evaluated laziliy.
  * Named workflows, like the ones below, are subworkflows similar to how they exist in Snakemake
  * Comments reagarding Nextflow are added mainly in the preprocess workflow
 */
@@ -15,6 +13,6 @@ workflow {
     higher_level(cube_channel)
 
     // circle detection, accuaracy assessment
-    // machine_learning()    
+    cropland_detection(higher_level.out.stm_chips, params.validation_data)
 }
 
