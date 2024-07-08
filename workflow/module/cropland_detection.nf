@@ -7,7 +7,7 @@ process DETECT_CIRCLES {
 
     script:
     """
-    detectcircle --input $stm --output ${tileId}_${year}_cirlces.json
+    detectcircle --input $stm --output ${tileId}_${year}_circles.json
     """
 }
 

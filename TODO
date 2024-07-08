@@ -1,0 +1,2 @@
+- finer-grained resource allocation (e.g. NDVI can have less memory)
+
