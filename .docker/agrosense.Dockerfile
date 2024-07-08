@@ -4,7 +4,7 @@ LABEL org.opencontainers.image.authors="florian@katerndahl.com"
 
 RUN apt-get update -y && \
     apt-get upgrade -y && \
-    apt-get install -y python3-poetry python3-pip python3-venv git
+    apt-get install -y python3-poetry python3-pip python3-venv git jq
 
 WORKDIR /home/root/agrosense/
 
