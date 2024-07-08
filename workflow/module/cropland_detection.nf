@@ -3,7 +3,7 @@ process DETECT_CIRCLES {
     tuple val(tileId), val(year), path(stm)
 
     output:
-    tuple val(tileId), val(year), path(stm), path("${tileId}_${year}_cirlces.json")
+    tuple val(tileId), val(year), path(stm), path("${tileId}_${year}_circles.json")
 
     script:
     """
