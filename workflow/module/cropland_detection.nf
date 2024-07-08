@@ -19,7 +19,7 @@ process TRANSFORM_COORDINATES {
     tuple val(tileId), val(year), path("${tileId}_${year}_circles.gpkg")
     script:
     """
-    GEOTRANSFORM=\$(gdalinfo $STM -json | jq '.geoTransform[]')
+    GEOTRANSFORM=\$(gdalinfo $stm -json | jq '.geoTransform[]')
     OFFSET=\$(echo \$GEOTRANSFORM | cut -d ' ' -f 1,4)     # first X, second Y
     PIXELSIZE=\$(echo \$GEOTRANSFORM | cut -d ' ' -f 2,6)  # first X, second Y
 
@@ -40,7 +40,7 @@ process MERGE_CIRCLES {
 
     script:
     """
-    ogrmerge.py ${year}_circles.gpkg $circles
+    ogrmerge.py -o ${year}_circles.gpkg $circles -single -nln $year
     """
 }
 /*
