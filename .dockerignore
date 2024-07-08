@@ -2,10 +2,13 @@ __pycache__/
 .snakemake
 .venv
 docs/
+cube/
 results/
 test-data/
 test-data_2/
-workflow
+workflow/
+work/
+get_meta
 .gitignore
 .git
 citation.cff
@@ -13,3 +16,7 @@ CONDUCT.md
 CONTRIBUTING.md
 LICENSE
 poetry.lock
+resources/
+tests/
+wf-meta
+
