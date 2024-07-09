@@ -26,8 +26,8 @@ process UNPACK {
     """
     mkdir $scene_identifier
     tar -xf $tar -C $scene_identifier
+    rm $scene_identifier/*_ST*
     rm $scene_identifier/*.{jpeg,json,txt}
-    rm $scene_identifier/*{SAA,SZA,VAA,VZA}.TIF
     """
 }
 
@@ -44,7 +44,7 @@ process STACK {
     script:
     """
     mkdir stack
-    gdal_merge.py -q -separate -o ${scene_identifier}_stacked.tif $unpacked/*T1_B*.TIF
+    gdal_merge.py -q -separate -o ${scene_identifier}_stacked.tif $unpacked/*SR_B*.TIF
     mv ${scene_identifier}_stacked.tif stack
     cp $unpacked/*_QA*.TIF $unpacked/*.xml stack
     """
