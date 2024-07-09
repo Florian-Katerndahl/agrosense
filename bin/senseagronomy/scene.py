@@ -174,10 +174,7 @@ class Scene:
         root = tree.getroot()
         surface_reflectance_entries = root.find("LEVEL2_SURFACE_REFLECTANCE_PARAMETERS")
         if surface_reflectance_entries is None:
-            self.gains = 0.0000275
-            self.offsets = -0.2
-            raise UserWarning("Assuming Level 2 data from collection 2. Setting gain to {self.gain} and offset to {self.offset}")
-            return (self.gains, self.offsets)
+            raise ParseError
 
         gains = np.array(
             [
