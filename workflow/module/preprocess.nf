@@ -7,7 +7,7 @@ process DOWNLOAD {
     
     script:
     """
-    downloadlandsat --username \$USGS_USERNAME -- password \$USGS_PASSWORD \
+    downloadlandsat --username \$USGS_USERNAME --password \$USGS_PASSWORD \
         --coordinates ${params.coordinates.join(' ')} --start-date ${params.date_range["start"]} \
         --end-date ${params.date_range["end"]} --max-results ${params.max_results} \
         --max-cloud-cover ${params.max_cloud_cover} --output-dir .
@@ -26,8 +26,8 @@ process UNPACK {
     """
     mkdir $scene_identifier
     tar -xf $tar -C $scene_identifier
-    rm $scene_identifier/*_ST*
-    rm $scene_identifier/*.txt
+    rm $scene_identifier/*.{jpeg,json,txt}
+    rm $scene_identifier/*{SAA,SZA,VAA,VZA}.TIF
     """
 }
 
@@ -44,7 +44,7 @@ process STACK {
     script:
     """
     mkdir stack
-    gdal_merge.py -q -separate -o ${scene_identifier}_stacked.tif $unpacked/*SR_B*.TIF
+    gdal_merge.py -q -separate -o ${scene_identifier}_stacked.tif $unpacked/*T1_B*.TIF
     mv ${scene_identifier}_stacked.tif stack
     cp $unpacked/*_QA*.TIF $unpacked/*.xml stack
     """
@@ -129,9 +129,9 @@ workflow preprocess {
     cube_channel = CUBE_INIT(params.cube_origin, params.cube_projection)
 
     // | is the pipe oprator and offers (I'd say) a readable way of connecting processes with channels
-    //transformed_channel = DOWNLOAD 
+    transformed_channel = DOWNLOAD 
     //     | DOWNLOAD
-    transformed_channel = Channel.fromPath("${params.output_directory}/resources/landsat/*.tar")
+    //transformed_channel = Channel.fromPath("${params.output_directory}/resources/landsat/*.tar")
         | flatten
         | UNPACK
         | STACK
