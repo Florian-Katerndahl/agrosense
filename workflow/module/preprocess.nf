@@ -7,8 +7,8 @@ process DOWNLOAD {
     
     script:
     """
-    download_data.py --username \$USGS_USERNAME -- password \$USGS_PASSWORD \
-        --coordinates ${coordinates.join(' ')} --start-date ${params.date_range["start"]} \
+    downloadlandsat --username \$USGS_USERNAME -- password \$USGS_PASSWORD \
+        --coordinates ${params.coordinates.join(' ')} --start-date ${params.date_range["start"]} \
         --end-date ${params.date_range["end"]} --max-results ${params.max_results} \
         --max-cloud-cover ${params.max_cloud_cover} --output-dir .
     """
@@ -129,7 +129,7 @@ workflow preprocess {
     cube_channel = CUBE_INIT(params.cube_origin, params.cube_projection)
 
     // | is the pipe oprator and offers (I'd say) a readable way of connecting processes with channels
-    // transformed_channel = Channel.of([aoi, begin, end])
+    //transformed_channel = DOWNLOAD 
     //     | DOWNLOAD
     transformed_channel = Channel.fromPath("${params.output_directory}/resources/landsat/*.tar")
         | flatten
