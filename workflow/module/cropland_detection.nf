@@ -40,7 +40,7 @@ process MERGE_CIRCLES {
 
     script:
     """
-    ogrmerge.py -o ${year}_circles.gpkg $circles -single -nln $year
+    ogrmerge.py -o ${year}_circles.gpkg $circles -single -nln $year -src_layer_field_name tile
     """
 }
 /*
