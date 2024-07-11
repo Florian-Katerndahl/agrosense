@@ -9,8 +9,8 @@ Landsat 8/9 Collection 2 Level 2 images.
 """
 
 from argparse import ArgumentParser
-from senseagronomy.downloader import search_and_download_data, get_credentials
 from typing import List, Tuple
+from senseagronomy.downloader import search_and_download_data, get_credentials
 
 
 def main() -> int:
@@ -111,9 +111,9 @@ def main() -> int:
         coordinates: List[Tuple[float, float]] = [
             (args.coordinates[i], args.coordinates[i + 1])
             for i in range(0, len(args.coordinates), 2)]
-    except IndexError:
+    except IndexError as exc:
         raise ValueError("Error: Either a latitude or longitude variable"
-                         " of a given coordinate is misssing.")
+                         " of a given coordinate is missing.") from exc
     if len(args.coordinates) <= 1:
         raise ValueError("Error: At least one coordinate containing of"
                          " longitude and latitude has to be given.")

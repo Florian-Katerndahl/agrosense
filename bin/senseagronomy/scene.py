@@ -1,7 +1,7 @@
 """
 Documentation from the USGS used as references:
 - LSDS-1619, version 6: Landsat 8-9 Collection 2 (C2) Level 2 Science Product (L2SP) Guide 
-- LSDS-1618, verison 4: Landsat 4-7 Collection 2 (C2) Level 2 Science Product (L2SP) Guide
+- LSDS-1618, version 4: Landsat 4-7 Collection 2 (C2) Level 2 Science Product (L2SP) Guide
 """
 from enum import Enum
 from glob import glob
@@ -96,6 +96,7 @@ class Cloud(Enum):
     SNOW: np.uint8         = np.uint8(0b00010000)
     WATER: np.uint8        = np.uint8(0b00100000)
 
+
 class Scene:
     """
     Take multiband image...original quality reports needed in same directory as image
@@ -120,15 +121,16 @@ class Scene:
         self.gains: Optional[np.ndarray] = None
         self.offsets: Optional[np.ndarray] = None
         self.raw: Optional[np.ndarray] = None
-        self.boundaries = (7273, 43636)
+        self.boundaries: Tuple[int, int] = (7273, 43636)
 
     def __enter__(self):
-        self.dataset = rio.open(self.directory + "/" + self.fglob)
+        self.dataset = rio.open(f"{self.directory}/{self.fglob}")
         self.metadata = self.dataset.meta
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        self.dataset.close()
+        if self.dataset is not None:
+            self.dataset.close()
 
     def read_raw(self):
         """
@@ -138,7 +140,7 @@ class Scene:
             equal the fill value.
         """
         if self.dataset is None:
-            self.dataset = rio.open(self.directory + "/" + self.fglob)
+            self.dataset = rio.open(f"{self.directory}/{self.fglob}")
 
         self.raw = self.dataset.read(self.dataset.indexes).astype(np.float64)
         for band in range(len(self.dataset.indexes)):
@@ -156,7 +158,7 @@ class Scene:
 
         .. note:: As gain and offset are identical for all sensors in the
             Collection 2, Level2, Tier 1 (L2 Scientific Products), this is
-            not needed strictly speaking but may make adopotion to other
+            not needed strictly speaking but may make adoption to other
             data sources easier as well as dealing with different number
             of bands across sensors.
 
@@ -170,7 +172,7 @@ class Scene:
         except IndexError as exc:
             raise FileNotFoundError from exc
 
-        tree = ET.parse(self.directory + "/" + mtl_xml)
+        tree = ET.parse(f"{self.directory}/{mtl_xml}")
         root = tree.getroot()
         surface_reflectance_entries = root.find("LEVEL2_SURFACE_REFLECTANCE_PARAMETERS")
         if surface_reflectance_entries is None:
@@ -205,7 +207,7 @@ class Scene:
 
         .. note:: Clamp should not be needed if all data ranges are
             clipped correctly when reading raw data. However,
-            stil used as a precaution.
+            still used as a precaution.
 
         .. note:: Reflectance of 0 would be incorrect, so it's set to
             smallest float value.
@@ -214,9 +216,10 @@ class Scene:
             [float64.min, 1.0], defaults to False
         :type clamp: bool, optional
         """
-        self.raw = self.raw * self.gains + self.offsets
-        if clamp:
-            self.raw = np.clip(self.raw, np.finfo(np.float64).tiny, 1.0)
+        if self.raw is not None and self.gains is not None and self.offsets is not None:
+            self.raw = self.raw * self.gains + self.offsets
+            if clamp:
+                self.raw = np.clip(self.raw, np.finfo(np.float64).tiny, 1.0)
 
     def get_pixel_qa(self, flags: List[Pixel]) -> np.ndarray:
         """
@@ -231,18 +234,18 @@ class Scene:
         :rtype: np.ndarray
         """
         try:
-            pixel_qa_fp = glob(self.directory + "/" + "*QA_PIXEL.TIF").pop()
+            pixel_qa_fp = glob(f"{self.directory}/*QA_PIXEL.TIF").pop()
         except IndexError as exc:
             raise FileNotFoundError from exc
 
-        compund_flag = np.uint16(0)
+        compound_flag = np.uint16(0)
         for flag in flags:
-            compund_flag = np.bitwise_or(compund_flag, flag.value)
+            compound_flag = np.bitwise_or(compound_flag, flag.value)
 
-        with rio.open(pixel_qa_fp, "r") as ds:
-            pixel_qa = ds.read(1)
+        with rio.open(pixel_qa_fp, "r") as dataset:
+            pixel_qa = dataset.read(1)
 
-        pixel_qa = np.bitwise_and(pixel_qa, compund_flag)
+        pixel_qa = np.bitwise_and(pixel_qa, compound_flag)
         pixel_qa = np.where(pixel_qa == 0, 0, 1).astype(bool)
         return pixel_qa
 
@@ -257,7 +260,7 @@ class Scene:
         .. note:: Pixels to be masked out are set to True.
 
         :param flags: List of flags to apply
-        :type flags: List[Pixel]
+        :type flags: List[Union[Aerosol, Cloud]]
         :param fglob: File glob for aerosol quality image. This file is named differently
             for Landsat 4 to 7 ("SR_CLOUD_QA") and Landsat 8 to 9 ("SR_QA_AEROSOL")
         :type fglob: Literal["SR_QA_AEROSOL", "SR_CLOUD_QA"]
@@ -266,20 +269,20 @@ class Scene:
         :rtype: np.ndarray
         """
         try:
-            pixel_qa_fp = glob(self.directory + "/*" + fglob + ".TIF").pop()
+            aerosol_qa_fp = glob(f"{self.directory}/*{fglob}.TIF").pop()
         except IndexError as exc:
             raise FileNotFoundError from exc
 
-        compund_flag = np.uint8(0)
+        compound_flag = np.uint8(0)
         for flag in flags:
-            compund_flag = np.bitwise_or(compund_flag, flag.value)
+            compound_flag = np.bitwise_or(compound_flag, flag.value)
 
-        with rio.open(pixel_qa_fp, "r") as ds:
-            pixel_qa = ds.read(1)
+        with rio.open(aerosol_qa_fp, "r") as dataset:
+            aerosol_qa = dataset.read(1)
 
-        pixel_qa = np.bitwise_and(pixel_qa, compund_flag)
-        pixel_qa = np.where(pixel_qa == 0, 0, 1).astype(bool)
-        return pixel_qa
+        aerosol_qa = np.bitwise_and(aerosol_qa, compound_flag)
+        aerosol_qa = np.where(aerosol_qa == 0, 0, 1).astype(bool)
+        return aerosol_qa
 
     def get_radsat_qa(self, flags: List[Radsat]) -> np.ndarray:
         """
@@ -288,23 +291,23 @@ class Scene:
         .. note:: Pixels to be masked out are set to True.
 
         :param flags: List of flags to apply
-        :type flags: List[Pixel]
+        :type flags: List[Radsat]
         :raises FileNotFoundError: If respective QA image is not found
         :return: Binary mask array
         :rtype: np.ndarray
         """
         try:
-            pixel_qa_fp = glob(self.directory + "/" + "*QA_RADSAT.TIF").pop()
+            radsat_qa_fp = glob(f"{self.directory}/*QA_RADSAT.TIF").pop()
         except IndexError as exc:
             raise FileNotFoundError from exc
 
-        compund_flag = np.uint16(0)
+        compound_flag = np.uint16(0)
         for flag in flags:
-            compund_flag = np.bitwise_or(compund_flag, flag.value)
+            compound_flag = np.bitwise_or(compound_flag, flag.value)
 
-        with rio.open(pixel_qa_fp, "r") as ds:
-            pixel_qa = ds.read(1)
+        with rio.open(radsat_qa_fp, "r") as dataset:
+            radsat_qa = dataset.read(1)
 
-        pixel_qa = np.bitwise_and(pixel_qa, compund_flag)
-        pixel_qa = np.where(pixel_qa == 0, 0, 1).astype(bool)
-        return pixel_qa
+        radsat_qa = np.bitwise_and(radsat_qa, compound_flag)
+        radsat_qa = np.where(radsat_qa == 0, 0, 1).astype(bool)
+        return radsat_qa
