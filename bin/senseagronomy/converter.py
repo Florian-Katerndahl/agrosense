@@ -1,12 +1,14 @@
 """
 converter.py
 
-This module provides functions for converting lists of string flags into corresponding
-Pixel, Radsat, Aerosol, and Cloud enumerations from the senseagronomy module.
+This module provides functions for converting lists of string flags into
+corresponding Pixel, Radsat, Aerosol, and Cloud enumerations from
+the senseagronomy module.
 """
 
 from typing import List, Union
 from senseagronomy import Pixel, Aerosol, Radsat, Cloud
+
 
 def str2pixel(flags: List[str]) -> List[Pixel]:
     """
@@ -16,7 +18,8 @@ def str2pixel(flags: List[str]) -> List[Pixel]:
         flags (List[str]): A list of string flags representing pixel types.
 
     Returns:
-        List[Pixel]: A list of Pixel enumeration values corresponding to the input flags.
+        List[Pixel]: A list of Pixel enumeration values corresponding to the
+        input flags.
 
     Raises:
         RuntimeError: If an unknown flag is encountered.
@@ -86,7 +89,8 @@ def str2radsat(flags: List[str]) -> List[Radsat]:
         flags (List[str]): A list of string flags representing radsat bands.
 
     Returns:
-        List[Radsat]: A list of Radsat enumeration values corresponding to the input flags.
+        List[Radsat]: A list of Radsat enumeration values corresponding to
+        the input flags.
 
     Raises:
         RuntimeError: If an unknown flag is encountered.
@@ -124,21 +128,21 @@ def str2aerosol(
     platform: str,
     a_flags: List[str],
     c_flags: List[str]
-    ) -> List[Union[Aerosol, Cloud]]:
+) -> List[Union[Aerosol, Cloud]]:
     """
-    Convert a list of string flags into a list of Aerosol or Cloud enumeration values 
-    based on the platform.
+    Convert a list of string flags into a list of Aerosol or Cloud
+    enumeration values based on the platform.
 
     Args:
         platform (str): The platform name which determines the flag type.
-        a_flags (List[str]): A list of string flags representing aerosol types 
+        a_flags (List[str]): A list of string flags representing aerosol types
         (if platform is "OLI").
-        c_flags (List[str]): A list of string flags representing cloud types 
+        c_flags (List[str]): A list of string flags representing cloud types
         (if platform is not "OLI").
 
     Returns:
-        List[Union[Aerosol, Cloud]]: A list of Aerosol or Cloud enumeration values corresponding 
-        to the input flags.
+        List[Union[Aerosol, Cloud]]: A list of Aerosol or Cloud enumeration
+        values corresponding to the input flags.
 
     Raises:
         RuntimeError: If an unknown flag is encountered.

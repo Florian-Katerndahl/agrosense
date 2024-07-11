@@ -1,7 +1,8 @@
 """
 Circle Detector Module
 
-This module contains a class for detecting circles in images using the Hough Circle Transform.
+This module contains a class for detecting circles
+    in images using the Hough Circle Transform.
 """
 
 from typing import List, Tuple, Optional
@@ -9,6 +10,7 @@ import sys
 import rasterio
 import cv2 as cv
 import numpy as np
+
 
 class CircleDetector:
     """Class for detecting circles in images."""
@@ -33,7 +35,10 @@ class CircleDetector:
 
         return points
 
-    def detect_circles(self, filename: str) -> Optional[List[List[Tuple[float, float]]]]:
+    def detect_circles(
+        self,
+        filename: str
+    ) -> Optional[List[List[Tuple[float, float]]]]:
         """Detect circles in an image file."""
         try:
             # Use rasterio to open the image
@@ -54,8 +59,10 @@ class CircleDetector:
             circles = cv.HoughCircles(
                 gray,  # Input image
                 cv.HOUGH_GRADIENT,  # Detection method
-                1,  # dp: Inverse ratio of the accumulator resolution to the image resolution
-                rows / 8,  # minDist: Minimum distance between the centers of the detected circles
+                1,  # dp: Inverse ratio of the accumulator resolution to
+                # the image resolution
+                rows / 8,  # minDist: Minimum distance between the
+                # centers of the detected circles
                 param1=100,  # Higher threshold for the Canny edge detector
                 param2=20,  # Accumulator threshold for the circle centers
                 minRadius=8,  # Minimum circle radius
@@ -67,14 +74,17 @@ class CircleDetector:
             if circles is not None:
                 circles = np.around(circles)  # Avoid conversion to uint16
                 for circle in circles[0, :]:
-                    center_x = float(circle[0])  # Keep as float
-                    center_y = float(circle[1])  # Keep as float
-                    radius = float(circle[2])  # Keep as float
-                    points = self.generate_circle_points(center_x, center_y, radius)
+                    center_x = float(circle[0])
+                    center_y = float(circle[1])
+                    radius = float(circle[2])
+                    points = self.generate_circle_points(
+                        center_x,
+                        center_y, radius
+                    )
                     circle_points.append(points)
 
             return circle_points
 
         except (rasterio.errors.RasterioIOError, ValueError):
-            sys.stderr.write(f"Error opening or processing image: {filename}\n")
+            sys.stderr.write(f"Error processing image: {filename}\n")
             return None

@@ -34,7 +34,7 @@ import re
 maxthreads = 5  # Threads count for downloads
 sema = threading.Semaphore(value=maxthreads)
 label = datetime.datetime.now().strftime(
-"%Y%m%d_%H%M%S"
+    "%Y%m%d_%H%M%S"
 )  # Customized label using date time
 threads = []
 
@@ -45,7 +45,7 @@ def sendRequest(url, data, apiKey=None):
     endpoint = url[pos:]
     json_data = json.dumps(data)
 
-    if apiKey == None:
+    if apiKey is None:
         response = requests.post(url, json_data)
     else:
         headers = {"X-Auth-Token": apiKey}
@@ -53,11 +53,11 @@ def sendRequest(url, data, apiKey=None):
 
     try:
         httpStatusCode = response.status_code
-        if response == None:
+        if response is None:
             print("No output from service")
             sys.exit()
         output = json.loads(response.text)
-        if output["errorCode"] != None:
+        if output["errorCode"] is not None:
             print("Failed Request ID", output["requestId"])
             print(output["errorCode"], "-", output["errorMessage"])
             sys.exit()
@@ -74,11 +74,17 @@ def sendRequest(url, data, apiKey=None):
         response.close()
         pos = serviceUrl.find("api")
         print(
-            f"Failed to parse request {endpoint} response. Re-check the input {json_data}. The input examples can be found at {url[:pos]}api/docs/reference/#{endpoint}\n"
+            f"Failed to parse request {endpoint} response. "
+            f"Re-check the input {json_data}. "
+            f"The input examples can be found at "
+            f"{url[:pos]}api/docs/reference/#{endpoint}\n"
         )
         sys.exit()
     response.close()
-    print(f"Finished request {endpoint} with request ID {output['requestId']}\n")
+    print(
+        f"Finished request {endpoint} "
+        f"with request ID {output['requestId']}\n"
+    )
 
     return output["data"]
 
@@ -124,7 +130,7 @@ def get_credentials(args):
     Raises:
         ValueError: If the username or password is not provided either as an
                     argument or as an environment variable.
-    
+
     Note:
         If username and password are saved in environment variables the names
         'USGS_USERNAME' and 'USGS_PASSWORD' should be used.
@@ -168,14 +174,21 @@ def get_bounding_box(coordinates: List[Tuple[float, float]]) -> List[float]:
 
     return bounding_box
 
-def usgs_script(username: str, password: str,
-            mbr: List[float],
-            start_date: str, end_date: str, output_dir: str,
-            max_cloud_cover: int = 10,
-            max_results: int = 100) -> None:
+
+def usgs_script(
+    username: str,
+    password: str,
+    mbr: List[float],
+    start_date: str,
+    end_date: str,
+    output_dir: str,
+    max_cloud_cover: int = 10,
+    max_results: int = 100
+) -> None:
+
     """
     copied from example script
-    """    
+    """
     print("\nRunning Scripts...\n")
 
     serviceUrl = "https://m2m.cr.usgs.gov/api/api/json/stable/"
@@ -210,15 +223,18 @@ def usgs_script(username: str, password: str,
 
     # download datasets
     for dataset in datasets:
-        # Because I've ran this before I know that I want GLS_ALL, I don't want to download anything I don't
-        # want so we will skip any other datasets that might be found, logging it incase I want to look into
-        # downloading that data in the future.
+        # Because I've ran this before I know that I want GLS_ALL,
+        # I don't want to download anything I don't want so we will
+        # skip any other datasets that might be found, logging it incase
+        #  I want to look into downloading that data in the future.
         if dataset["datasetAlias"] != datasetName:
-            print("Found dataset " + dataset["collectionName"] + " but skipping it.\n")
+            print(
+                f"Found dataset {dataset['collectionName']} but skipping it.\n"
+            )
             continue
 
-        # I don't want to limit my results, but using the dataset-filters request, you can
-        # find additional filters
+        # I don't want to limit my results, but using the dataset-filters
+        # request, you can find additional filters
 
         acquisitionFilter = temporalFilter
 
@@ -229,7 +245,11 @@ def usgs_script(username: str, password: str,
             "sceneFilter": {
                 "spatialFilter": spatialFilter,
                 "acquisitionFilter": acquisitionFilter,
-                "cloudCoverFilter": {"min": 0, "max": max_cloud_cover, "includeUnknown": False}
+                "cloudCoverFilter": {
+                    "min": 0,
+                    "max": max_cloud_cover,
+                    "includeUnknown": False
+                }
             },
         }
 
@@ -248,7 +268,10 @@ def usgs_script(username: str, password: str,
 
             # Find the download options for these scenes
             # NOTE :: Remember the scene list cannot exceed 50,000 items!
-            payload = {"datasetName": dataset["datasetAlias"], "entityIds": sceneIds}
+            payload = {
+                "datasetName": dataset["datasetAlias"],
+                "entityIds": sceneIds
+            }
 
             downloadOptions = sendRequest(
                 serviceUrl + "download-options", payload, apiKey
@@ -258,9 +281,12 @@ def usgs_script(username: str, password: str,
             downloads = []
             for product in downloadOptions:
                 # Make sure the product is available for this scene
-                if product["available"] == True:
+                if product["available"] is True:
                     downloads.append(
-                        {"entityId": product["entityId"], "productId": product["id"]}
+                        {
+                            "entityId": product["entityId"],
+                            "productId": product["id"]
+                        }
                     )
 
             # Did we find products?
@@ -277,10 +303,12 @@ def usgs_script(username: str, password: str,
                     serviceUrl + "download-request", payload, apiKey
                 )
 
-                # PreparingDownloads has a valid link that can be used but data may not be immediately available
-                # Call the download-retrieve method to get download that is available for immediate download
+                # PreparingDownloads has a valid link that can be used but data
+                # may not be immediately available Call the download-retrieve
+                # method to get download that is available for immediate
+                # download
                 if (
-                    requestResults["preparingDownloads"] != None
+                    requestResults["preparingDownloads"] is not None
                     and len(requestResults["preparingDownloads"]) > 0
                 ):
                     payload = {"label": label}
@@ -292,7 +320,8 @@ def usgs_script(username: str, password: str,
 
                     for download in moreDownloadUrls["available"]:
                         if (
-                            str(download["downloadId"]) in requestResults["newRecords"]
+                            str(download["downloadId"])
+                            in requestResults["newRecords"]
                             or str(download["downloadId"])
                             in requestResults["duplicateProducts"]
                         ):
@@ -301,14 +330,16 @@ def usgs_script(username: str, password: str,
 
                     for download in moreDownloadUrls["requested"]:
                         if (
-                            str(download["downloadId"]) in requestResults["newRecords"]
+                            str(download["downloadId"])
+                            in requestResults["newRecords"]
                             or str(download["downloadId"])
                             in requestResults["duplicateProducts"]
                         ):
                             downloadIds.append(download["downloadId"])
                             runDownload(threads, download["url"], output_dir)
 
-                    # Didn't get all of the reuested downloads, call the download-retrieve method again probably after 30 seconds
+                    # Didn't get all of the reuested downloads, call the
+                    # download-retrieve method again probably after 30 seconds
                     while len(downloadIds) < (
                         requestedDownloadsCount - len(requestResults["failed"])
                     ):
@@ -317,11 +348,14 @@ def usgs_script(username: str, password: str,
                             - len(downloadIds)
                             - len(requestResults["failed"])
                         )
-                        print(
-                            "\n",
-                            preparingDownloads,
-                            "downloads are not available. Waiting for 30 seconds.\n",
+                        message = (
+                            "\n"
+                            f"{preparingDownloads} downloads are not"
+                            "available. Waiting for 30 seconds.\n"
                         )
+
+                        print(message)
+
                         time.sleep(30)
                         print("Trying to retrieve data\n")
                         moreDownloadUrls = sendRequest(
@@ -335,7 +369,11 @@ def usgs_script(username: str, password: str,
                                 in requestResults["duplicateProducts"]
                             ):
                                 downloadIds.append(download["downloadId"])
-                                runDownload(threads, download["url"], output_dir)
+                                runDownload(
+                                    threads,
+                                    download["url"],
+                                    output_dir
+                                )
 
                 else:
                     # Get all available downloads
@@ -352,19 +390,23 @@ def usgs_script(username: str, password: str,
 
     # Logout so the API Key cannot be used anymore
     endpoint = "logout"
-    if sendRequest(serviceUrl + endpoint, None, apiKey) == None:
+    if sendRequest(serviceUrl + endpoint, None, apiKey) is None:
         print("Logged Out\n\n")
     else:
         print("Logout Failed\n\n")
 
 
-
-def search_and_download_data(username: str, password: str,
-                             coordinates: List[Tuple[float, float]],
-                             start_date: str, end_date: str, output_dir: str,
-                             max_cloud_cover: int = 10,
-                             max_results: int = 100,
-                             download: bool = True) -> None:
+def search_and_download_data(
+    username: str,
+    password: str,
+    coordinates: List[Tuple[float, float]],
+    start_date: str,
+    end_date: str,
+    output_dir: str,
+    max_cloud_cover: int = 10,
+    max_results: int = 100,
+    download: bool = True
+) -> None:
     """
     This function logs into the USGS API and EarthExplorer with the provided
     username and password, searches for scenes of the Landsat satellite based
@@ -436,7 +478,8 @@ def search_and_download_data(username: str, password: str,
     if len(coordinates) == 1:
         # search for scenes if coordinates only contains one searching point
         raise RuntimeError
-        # scenes = api.search(dataset="landsat_etm_c2_l2", start_date=start_date,
+        # scenes = api.search(dataset="landsat_etm_c2_l2",
+        #                     start_date=start_date,
         #                     end_date=end_date,
         #                     max_cloud_cover=max_cloud_cover,
         #                     max_results=max_results,
@@ -446,5 +489,13 @@ def search_and_download_data(username: str, password: str,
         # get bounding box from coordinates
         bounding_box = get_bounding_box(coordinates)
         # search for scenes through a bounding box
-        usgs_script(username, password, bounding_box, start_date, end_date, output_dir, max_cloud_cover, max_results)
-    
+        usgs_script(
+            username,
+            password,
+            bounding_box,
+            start_date,
+            end_date,
+            output_dir,
+            max_cloud_cover,
+            max_results
+        )

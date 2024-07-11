@@ -1,7 +1,9 @@
 """
 Documentation from the USGS used as references:
-- LSDS-1619, version 6: Landsat 8-9 Collection 2 (C2) Level 2 Science Product (L2SP) Guide 
-- LSDS-1618, version 4: Landsat 4-7 Collection 2 (C2) Level 2 Science Product (L2SP) Guide
+- LSDS-1619, version 6: Landsat 8-9 Collection 2 (C2) Level 2 Science
+    Product (L2SP) Guide
+- LSDS-1618, version 4: Landsat 4-7 Collection 2 (C2) Level 2 Science
+    Product (L2SP) Guide
 """
 from enum import Enum
 from glob import glob
@@ -16,18 +18,19 @@ class Radsat(Enum):
     """
     Mask flag values for radiometric processing QA image
 
-    .. note:: b6h_b9 applies to band 6H for Landsat 7 and band 9 for Landsat 8/9.
+    .. note:: b6h_b9 applies to band 6H for Landsat 7 and band 9 for
+        Landsat 8/9.
     """
-    B1: np.uint16                =  np.uint16(0b0000000000000001)
-    B2: np.uint16                =  np.uint16(0b0000000000000010)
-    B3: np.uint16                =  np.uint16(0b0000000000000100)
-    B4: np.uint16                =  np.uint16(0b0000000000001000)
-    B5: np.uint16                =  np.uint16(0b0000000000010000)
-    B6: np.uint16                =  np.uint16(0b0000000000100000)
-    B7: np.uint16                =  np.uint16(0b0000000001000000)
-    B6H_B9: np.uint16            =  np.uint16(0b0000000100000000)
-    DROPPED_PIXEL: np.uint16     =  np.uint16(0b0000001000000000)
-    TERRAIN_OCCLUSION: np.uint16 =  np.uint16(0b0000100000000000)
+    B1: np.uint16 = np.uint16(0b0000000000000001)
+    B2: np.uint16 = np.uint16(0b0000000000000010)
+    B3: np.uint16 = np.uint16(0b0000000000000100)
+    B4: np.uint16 = np.uint16(0b0000000000001000)
+    B5: np.uint16 = np.uint16(0b0000000000010000)
+    B6: np.uint16 = np.uint16(0b0000000000100000)
+    B7: np.uint16 = np.uint16(0b0000000001000000)
+    B6H_B9: np.uint16 = np.uint16(0b0000000100000000)
+    DROPPED_PIXEL: np.uint16 = np.uint16(0b0000001000000000)
+    TERRAIN_OCCLUSION: np.uint16 = np.uint16(0b0000100000000000)
 
 
 class Pixel(Enum):
@@ -36,70 +39,71 @@ class Pixel(Enum):
 
     .. note:: Cirrus masks only apply to Landsat 8 and 9.
     """
-    FILL: np.uint16           = np.uint16(0b0000000000000001)
+    FILL: np.uint16 = np.uint16(0b0000000000000001)
     DILLATED_CLOUD: np.uint16 = np.uint16(0b0000000000000010)
-    CIRRUS: np.uint16         = np.uint16(0b0000000000000100)  # only LS 8-9
-    CLOUD: np.uint16          = np.uint16(0b0000000000001000)
-    CLOUD_SHADOW: np.uint16   = np.uint16(0b0000000000010000)
-    SNOW: np.uint16           = np.uint16(0b0000000000100000)
-    CLEAR: np.uint16          = np.uint16(0b0000000001000000)
-    WATER: np.uint16          = np.uint16(0b0000000010000000)
+    CIRRUS: np.uint16 = np.uint16(0b0000000000000100)  # only LS 8-9
+    CLOUD: np.uint16 = np.uint16(0b0000000000001000)
+    CLOUD_SHADOW: np.uint16 = np.uint16(0b0000000000010000)
+    SNOW: np.uint16 = np.uint16(0b0000000000100000)
+    CLEAR: np.uint16 = np.uint16(0b0000000001000000)
+    WATER: np.uint16 = np.uint16(0b0000000010000000)
     # cloud confidence levels
-    C_UNKNOWN: np.uint16      = np.uint16(0b0000000000000000)
-    C_LOW: np.uint16          = np.uint16(0b0000000100000000)
-    C_MEDIUM: np.uint16       = np.uint16(0b0000001000000000)
-    C_HIGH: np.uint16         = np.uint16(0b0000001100000000)
+    C_UNKNOWN: np.uint16 = np.uint16(0b0000000000000000)
+    C_LOW: np.uint16 = np.uint16(0b0000000100000000)
+    C_MEDIUM: np.uint16 = np.uint16(0b0000001000000000)
+    C_HIGH: np.uint16 = np.uint16(0b0000001100000000)
     # cloud shadow confidence levels
-    CS_UNKNOWN: np.uint16     = np.uint16(0b0000000000000000)
-    CS_LOW: np.uint16         = np.uint16(0b0000010000000000)
-    CS_MEDIUM: np.uint16      = np.uint16(0b0000100000000000)
-    CS_HIGH: np.uint16        = np.uint16(0b0000110000000000)
+    CS_UNKNOWN: np.uint16 = np.uint16(0b0000000000000000)
+    CS_LOW: np.uint16 = np.uint16(0b0000010000000000)
+    CS_MEDIUM: np.uint16 = np.uint16(0b0000100000000000)
+    CS_HIGH: np.uint16 = np.uint16(0b0000110000000000)
     # snow/ice confidence
-    SC_UNKNOWN: np.uint16     = np.uint16(0b0000000000000000)
-    SC_LOW: np.uint16         = np.uint16(0b0001000000000000)
-    SC_MEDIUM: np.uint16      = np.uint16(0b0010000000000000)
-    SC_HIGH: np.uint16        = np.uint16(0b0011000000000000)
+    SC_UNKNOWN: np.uint16 = np.uint16(0b0000000000000000)
+    SC_LOW: np.uint16 = np.uint16(0b0001000000000000)
+    SC_MEDIUM: np.uint16 = np.uint16(0b0010000000000000)
+    SC_HIGH: np.uint16 = np.uint16(0b0011000000000000)
     # cirrus confidence
-    CC_UNKNOWN: np.uint16     = np.uint16(0b0000000000000000)  # only LS 8-9
-    CC_LOW: np.uint16         = np.uint16(0b0100000000000000)  # only LS 8-9
-    CC_MEDIUM: np.uint16      = np.uint16(0b1000000000000000)  # only LS 8-9
-    CC_HIGH: np.uint16        = np.uint16(0b1100000000000000)  # only LS 8-9
+    CC_UNKNOWN: np.uint16 = np.uint16(0b0000000000000000)  # only LS 8-9
+    CC_LOW: np.uint16 = np.uint16(0b0100000000000000)  # only LS 8-9
+    CC_MEDIUM: np.uint16 = np.uint16(0b1000000000000000)  # only LS 8-9
+    CC_HIGH: np.uint16 = np.uint16(0b1100000000000000)  # only LS 8-9
 
 
 class Aerosol(Enum):
     """
     Mask flag values for Aerosol QA image
-    
+
     .. note:: Landsat 8-9 equivalent to Cloud enum.
     """
-    FILL: np.uint8            = np.uint8(0b00000001)
+    FILL: np.uint8 = np.uint8(0b00000001)
     VALID_RETRIEVAL: np.uint8 = np.uint8(0b00000010)
-    WATER: np.uint8           = np.uint8(0b00000100)
-    INTERPOLATED: np.uint8    = np.uint8(0b00100000)
+    WATER: np.uint8 = np.uint8(0b00000100)
+    INTERPOLATED: np.uint8 = np.uint8(0b00100000)
     # aerosol levels
-    CLIMATOLOGY: np.uint8     = np.uint8(0b00000000)
-    LOW: np.uint8             = np.uint8(0b01000000)
-    MEDIUM: np.uint8          = np.uint8(0b10000000)
-    HIGH: np.uint8            = np.uint8(0b11000000)
+    CLIMATOLOGY: np.uint8 = np.uint8(0b00000000)
+    LOW: np.uint8 = np.uint8(0b01000000)
+    MEDIUM: np.uint8 = np.uint8(0b10000000)
+    HIGH: np.uint8 = np.uint8(0b11000000)
 
 
 class Cloud(Enum):
     """
     Mask flag values for Aerosol QA image
-    
+
     .. note:: Landsat 4-7 equivalent to Aerosol enum.
     """
-    DDV: np.uint8          = np.uint8(0b00000001)
-    CLOUD: np.uint8        = np.uint8(0b00000010)
+    DDV: np.uint8 = np.uint8(0b00000001)
+    CLOUD: np.uint8 = np.uint8(0b00000010)
     CLOUD_SHADOW: np.uint8 = np.uint8(0b00000100)
-    NEAR_CLOUD: np.uint8   = np.uint8(0b00001000)
-    SNOW: np.uint8         = np.uint8(0b00010000)
-    WATER: np.uint8        = np.uint8(0b00100000)
+    NEAR_CLOUD: np.uint8 = np.uint8(0b00001000)
+    SNOW: np.uint8 = np.uint8(0b00010000)
+    WATER: np.uint8 = np.uint8(0b00100000)
 
 
 class Scene:
     """
-    Take multiband image...original quality reports needed in same directory as image
+    Take multiband image...original quality reports needed
+        in same directory as image
     """
     FILL_VALUE: int = 0
 
@@ -107,7 +111,8 @@ class Scene:
         """
         Initialize scene object
 
-        .. warning:: Valid data ranges are hardcoded for the L2SP processing level!
+        .. warning:: Valid data ranges are hardcoded for the L2SP
+            processing level!
 
         :param directory: Directory path where files are stored
         :type directory: str
@@ -136,8 +141,8 @@ class Scene:
         """
         Read all bands as numpy arrays
 
-        .. note:: Values outside valid value ranges are set to np.nan as well as values that
-            equal the fill value.
+        .. note:: Values outside valid value ranges are set to np.nan
+            as well as values that equal the fill value.
         """
         if self.dataset is None:
             self.dataset = rio.open(f"{self.directory}/{self.fglob}")
@@ -145,7 +150,8 @@ class Scene:
         self.raw = self.dataset.read(self.dataset.indexes).astype(np.float64)
         for band in range(len(self.dataset.indexes)):
             self.raw[band] = np.where(
-                (self.raw[band] < self.boundaries[0]) | (self.raw[band] > self.boundaries[1]),
+                ((self.raw[band] < self.boundaries[0]) |
+                    (self.raw[band] > self.boundaries[1])),
                 np.nan,
                 self.raw[band]
             )
@@ -174,7 +180,9 @@ class Scene:
 
         tree = ET.parse(f"{self.directory}/{mtl_xml}")
         root = tree.getroot()
-        surface_reflectance_entries = root.find("LEVEL2_SURFACE_REFLECTANCE_PARAMETERS")
+        surface_reflectance_entries = root.find(
+            "LEVEL2_SURFACE_REFLECTANCE_PARAMETERS"
+        )
         if surface_reflectance_entries is None:
             raise ParseError
 
@@ -216,7 +224,11 @@ class Scene:
             [float64.min, 1.0], defaults to False
         :type clamp: bool, optional
         """
-        if self.raw is not None and self.gains is not None and self.offsets is not None:
+        if (
+            self.raw is not None and
+            self.gains is not None and
+            self.offsets is not None
+        ):
             self.raw = self.raw * self.gains + self.offsets
             if clamp:
                 self.raw = np.clip(self.raw, np.finfo(np.float64).tiny, 1.0)
@@ -253,7 +265,7 @@ class Scene:
         self,
         flags: List[Union[Aerosol, Cloud]],
         fglob: Literal["SR_QA_AEROSOL", "SR_CLOUD_QA"]
-        ) -> np.ndarray:
+    ) -> np.ndarray:
         """
         Filter aerosol QA image with regard to supplied flags
 
@@ -261,8 +273,9 @@ class Scene:
 
         :param flags: List of flags to apply
         :type flags: List[Union[Aerosol, Cloud]]
-        :param fglob: File glob for aerosol quality image. This file is named differently
-            for Landsat 4 to 7 ("SR_CLOUD_QA") and Landsat 8 to 9 ("SR_QA_AEROSOL")
+        :param fglob: File glob for aerosol quality image. This file is named
+            differently for Landsat 4 to 7 ("SR_CLOUD_QA") and Landsat 8 to 9
+            ("SR_QA_AEROSOL")
         :type fglob: Literal["SR_QA_AEROSOL", "SR_CLOUD_QA"]
         :raises FileNotFoundError: If respective QA image is not found
         :return: Binary mask array

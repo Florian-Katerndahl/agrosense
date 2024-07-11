@@ -1,5 +1,6 @@
 """
-This module detects circles in images and saves their coordinates to a JSON file.
+This module detects circles in images and saves their
+coordinates to a JSON file.
 """
 
 import os
@@ -7,6 +8,7 @@ import json
 from typing import List, Dict, Tuple
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter, Namespace
 from senseagronomy import CircleDetector
+
 
 def main() -> int:
     """

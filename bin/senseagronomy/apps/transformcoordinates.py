@@ -10,6 +10,7 @@ import pandas as pd
 import geopandas as gpd
 from senseagronomy import SpatialTransformer
 
+
 def main() -> None:
     """
     Main function to parse arguments and transform coordinates.
@@ -57,23 +58,36 @@ def main() -> None:
     args: Namespace = parser.parse_args()
 
     # Validate the number of origins and pixel sizes
-    if len(args.origins) % 2 != 0 or len(args.pixel_sizes) % 2 != 0:
-        sys.stderr.write("Error: Origins and pixel sizes should be provided in pairs (x, y).\n")
+    if (
+        len(args.origins) % 2 != 0
+        or len(args.pixel_sizes) % 2 != 0
+    ):
+        sys.stderr.write(
+            "Error: Origins and pixel sizes should be provided in pairs "
+            "(x, y).\n"
+        )
         sys.exit(1)
 
     num_images: int = len(args.origins) // 2
     origins: List[Tuple[float, float]] = [
-        (args.origins[i * 2], args.origins[i * 2 + 1]) for i in range(num_images)
+        (args.origins[i * 2], args.origins[i * 2 + 1])
+        for i in range(num_images)
     ]
     pixel_sizes: List[Tuple[float, float]] = [
-        (args.pixel_sizes[i * 2], args.pixel_sizes[i * 2 + 1]) for i in range(num_images)
+        (args.pixel_sizes[i * 2], args.pixel_sizes[i * 2 + 1])
+        for i in range(num_images)
     ]
     crs: str = args.crs
 
     transformer: SpatialTransformer = SpatialTransformer()
 
     # Step 1: Read the JSON file
-    data: Dict[str, List[List[Tuple[float, float]]]] = transformer.read_json(args.input_file)
+    data: Dict[
+        str,
+        List[
+            List[Tuple[float, float]]
+        ]
+    ] = transformer.read_json(args.input_file)
 
     coordinates: Dict[str, List[List[Tuple[float, float]]]] = {}
     data_keys = list(data.keys())
@@ -85,8 +99,14 @@ def main() -> None:
         image_index: int = data_keys.index(key)
 
         # Step 2: Transform coordinates
-        transformed_circles: List[List[Tuple[float, float]]] = transformer.transform_coordinates(
-            circle_coordinates, origins[image_index], pixel_sizes[image_index]
+        TransformedCirclesType = List[List[Tuple[float, float]]]
+
+        transformed_circles: TransformedCirclesType = (
+            transformer.transform_coordinates(
+                circle_coordinates,
+                origins[image_index],
+                pixel_sizes[image_index]
+            )
         )
 
         coordinates[key] = transformed_circles
@@ -94,11 +114,15 @@ def main() -> None:
     # Step 3: Create a GeoDataFrame for each image and merge them
     all_gdfs: List[gpd.GeoDataFrame] = []
     for transformed_circles in coordinates.values():
-        gdf: gpd.GeoDataFrame = transformer.create_geodataframe(transformed_circles, crs)
+        gdf: gpd.GeoDataFrame = transformer.create_geodataframe(
+            transformed_circles, crs
+        )
         all_gdfs.append(gdf)
 
     # Merge all GeoDataFrames into one
-    merged_gdf: gpd.GeoDataFrame = gpd.GeoDataFrame(pd.concat(all_gdfs, ignore_index=True))
+    merged_gdf: gpd.GeoDataFrame = gpd.GeoDataFrame(
+        pd.concat(all_gdfs, ignore_index=True)
+    )
 
     # Step 4: Save the output to SQLite using GeoPackage format
     transformer.save_geodataframe(merged_gdf, args.output_file)

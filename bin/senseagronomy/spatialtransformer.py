@@ -10,6 +10,7 @@ from typing import List, Tuple, Dict
 from shapely.geometry import Polygon
 import geopandas as gpd
 
+
 class SpatialTransformer:
     """
     A class to handle spatial transformations of coordinates and conversion
@@ -22,7 +23,10 @@ class SpatialTransformer:
         """
         pass
 
-    def read_json(self, file_path: str) -> Dict[str, List[List[Tuple[float, float]]]]:
+    def read_json(
+        self,
+        file_path: str
+    ) -> Dict[str, List[List[Tuple[float, float]]]]:
         """
         Reads a JSON file containing circle coordinates.
 
@@ -30,7 +34,8 @@ class SpatialTransformer:
             file_path (str): The path to the JSON file.
 
         Returns:
-            Dict[str, List[List[Tuple[float, float]]]]: The data loaded from the JSON file.
+            Dict[str, List[List[Tuple[float, float]]]]: The data
+            loaded from the JSON file.
         """
         with open(file_path, 'r', encoding='utf-8') as file:
             data = json.load(file)
@@ -46,9 +51,10 @@ class SpatialTransformer:
         Transforms circle coordinates based on the origin and pixel size.
 
         Args:
-            circle_coordinates (List[List[Tuple[float, float]]]): List of circles with coordinates.
+            circle_coordinates (List[List[Tuple[float, float]]]): List of
+            circles with coordinates.
             origin (Tuple[float, float]): The origin point for transformation.
-            pixel_size (Tuple[float, float]): The pixel size for transformation.
+            pixel_size (Tuple[float, float]): pixel size for transformation.
 
         Returns:
             List[List[Tuple[float, float]]]: Transformed coordinates.
@@ -75,7 +81,8 @@ class SpatialTransformer:
         Creates a GeoDataFrame from the transformed circle coordinates.
 
         Args:
-            transformed_circles (List[List[Tuple[float, float]]]): Transformed circle coordinates.
+            transformed_circles (List[List[Tuple[float, float]]]):
+                Transformed circle coordinates.
             crs (str): The coordinate reference system.
 
         Returns:
@@ -85,7 +92,10 @@ class SpatialTransformer:
         gdf = gpd.GeoDataFrame(geometry=polygons, crs=crs)
         return gdf
 
-    def save_geodataframe(self, gdf: gpd.GeoDataFrame, output_file: str) -> None:
+    def save_geodataframe(
+        self,
+        gdf: gpd.GeoDataFrame, output_file: str
+    ) -> None:
         """
         Saves the GeoDataFrame to a file.
 
