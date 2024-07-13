@@ -44,14 +44,14 @@ class CircleDetector:
                 1, # dp: Inverse ratio of the accumulator resolution to the image resolution. 
                     #  For example, if dp=1, the accumulator has the same resolution as the input image.
                     #  If dp=2, the accumulator has half the resolution.
-                rows / 8, # minDist: Minimum distance between the centers of the detected circles. 
+                20, # minDist: Minimum distance between the centers of the detected circles. 
                             # This parameter is crucial to distinguish circles that are close to each other.
                 param1=100, # param1: Higher threshold for the Canny edge detector (lower threshold is twice smaller).
                             # The Canny edge detector is used internally by the function to find circle edges.
                 param2=20, # param2: Accumulator threshold for the circle centers at the detection stage.
                             # The smaller it is, the more false circles may be detected.
                 minRadius=8, # minRadius: Minimum circle radius. Circles with smaller radii than this will be ignored.
-                maxRadius=15 # maxRadius: Maximum circle radius. Circles with larger radii than this will be ignored.
+                maxRadius=20 # maxRadius: Maximum circle radius. Circles with larger radii than this will be ignored.
             )
             
 
