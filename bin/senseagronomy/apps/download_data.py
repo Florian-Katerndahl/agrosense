@@ -10,7 +10,7 @@ Landsat 8/9 Collection 2 Level 2 images.
 
 from argparse import ArgumentParser
 from typing import List, Tuple
-from senseagronomy.downloader import search_and_download_data, get_credentials
+from senseagronomy.downloader import validate_and_download_data, get_credentials
 
 
 def main() -> int:

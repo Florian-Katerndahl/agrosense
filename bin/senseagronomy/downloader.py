@@ -88,7 +88,7 @@ def sendRequest(url, data, apiKey=None):
             sys.exit()
     except Exception as e:
         response.close()
-        pos = serviceUrl.find("api")
+        pos = url.find("api")
         print(
             f"Failed to parse request {endpoint} response. "
             f"Re-check the input {json_data}. "
@@ -119,12 +119,12 @@ def downloadFile(url, path):
                    try to re-download the file.
 
     Note:
-        This function uses a semaphore (SEMA) to limit the number of
+        This function uses a semaphore (sema) to limit the number of
         concurrent downloads. It acquires the semaphore before starting
         the downlaod and releases if after the download is finished,
         regardless of whether the download was successful or not.
     """
-    SEMA.acquire()
+    sema.acquire()
     try:
         response = requests.get(url, stream=True)
         disposition = response.headers["content-disposition"]
@@ -137,9 +137,9 @@ def downloadFile(url, path):
         print(f"Downloaded {filename}", file=sys.stderr)
     except Exception as e:
         print(f"Failed to download from {url}. {e}. Will try to re-download.")
-        runDownload(THREADS, url, path)
+        runDownload(threads, url, path)
     finally:
-        SEMA.release()
+        sema.release()
 
 
 def runDownload(threads, url, path):
@@ -368,21 +368,8 @@ def search_and_download_data(username: str, password: str,
                     # Didn't get all of the reuested downloads, call the
                     # download-retrieve method again probably after 30 seconds
                     while len(downloadIds) < (
-                        requestedDownloadsCount - len(requestResults["failed"])
+                        len(downloads) - len(requestResults["failed"])
                     ):
-                        preparingDownloads = (
-                            requestedDownloadsCount
-                            - len(downloadIds)
-                            - len(requestResults["failed"])
-                        )
-                        message = (
-                            "\n"
-                            f"{preparingDownloads} downloads are not"
-                            "available. Waiting for 30 seconds.\n"
-                        )
-
-                        print(message)
-
                         time.sleep(30)
                         print("Trying to retrieve data\n")
                         moreDownloadUrls = sendRequest(
@@ -399,13 +386,13 @@ def search_and_download_data(username: str, password: str,
                 else:
                     # Get all available downloads
                     for download in requestResults["availableDownloads"]:
-                        runDownload(THREADS, download["url"], output_dir)
+                        runDownload(threads, download["url"], output_dir)
         else:
             print("Search found no results.\n")
 
     print("Downloading files... Please do not close the program\n",
           file=sys.stderr)
-    for thread in THREADS:
+    for thread in threads:
         thread.join()
 
     print("Complete Downloading")
@@ -418,7 +405,7 @@ def search_and_download_data(username: str, password: str,
         print("Logout Failed\n\n")
 
 
-def search_and_download_data(
+def validate_and_download_data(
     username: str,
     password: str,
     coordinates: List[Tuple[float, float]],
