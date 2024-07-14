@@ -20,6 +20,7 @@ process NDVI {
 
 process STM {
     publishDir "${params.stm_directory}/${year}/tifs", mode: 'copy', overwrite: true
+
     label 'gdal'
 
     input:

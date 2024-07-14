@@ -129,9 +129,7 @@ workflow preprocess {
     cube_channel = CUBE_INIT(params.cube_origin, params.cube_projection)
 
     // | is the pipe oprator and offers (I'd say) a readable way of connecting processes with channels
-    transformed_channel = DOWNLOAD 
-    //     | DOWNLOAD
-    //transformed_channel = Channel.fromPath("${params.output_directory}/resources/landsat/*.tar")
+    transformed_channel = Channel.fromPath(params.input_data)
         | flatten
         | UNPACK
         | STACK

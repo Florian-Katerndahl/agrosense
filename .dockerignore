@@ -18,5 +18,6 @@ LICENSE
 poetry.lock
 resources/
 tests/
-wf-meta
+wf-meta/
+wf-output/
 

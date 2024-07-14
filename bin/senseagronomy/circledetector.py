@@ -61,12 +61,12 @@ class CircleDetector:
                 cv.HOUGH_GRADIENT,  # Detection method
                 1,  # dp: Inverse ratio of the accumulator resolution to
                 # the image resolution
-                rows / 8,  # minDist: Minimum distance between the
+                20,  # minDist: Minimum distance between the
                 # centers of the detected circles
                 param1=100,  # Higher threshold for the Canny edge detector
                 param2=20,  # Accumulator threshold for the circle centers
                 minRadius=8,  # Minimum circle radius
-                maxRadius=15  # Maximum circle radius
+                maxRadius=20  # Maximum circle radius
             )
 
             circle_points = []

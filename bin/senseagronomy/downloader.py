@@ -90,28 +90,27 @@ def sendRequest(url, data, apiKey=None):
 
 
 def downloadFile(url, path):
-    # sema.acquire()
+    sema.acquire()
     try:
         response = requests.get(url, stream=True)
         disposition = response.headers["content-disposition"]
         filename = re.findall("filename=(.+)", disposition)[0].strip('"')
-        print(f"Downloading {filename} ...\n")
+        print(f"Downloading {filename} ...\n", file=sys.stderr)
         if path != "" and path[-1] != "/":
             filename = "/" + filename
         open(path + filename, "wb").write(response.content)
-        print(f"Downloaded {filename}\n")
-        # sema.release()
+        print(f"Downloaded {filename}\n", file=sys.stderr)
+        sema.release()
     except Exception as e:
         print(f"Failed to download from {url}. {e}. Will try to re-download.")
-        # sema.release()
-        # runDownload(threads, url, path)
+        sema.release()
+        runDownload(threads, url, path)
 
 
 def runDownload(threads, url, path):
     thread = threading.Thread(target=downloadFile, args=(url, path,))
     threads.append(thread)
     thread.start()
-    # downloadFile(url, path)
 
 
 def get_credentials(args):
@@ -382,7 +381,7 @@ def usgs_script(
         else:
             print("Search found no results.\n")
 
-    print("Downloading files... Please do not close the program\n")
+    print("Downloading files... Please do not close the program\n", file=sys.stderr)
     for thread in threads:
         thread.join()
 
