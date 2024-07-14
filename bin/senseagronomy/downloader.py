@@ -237,28 +237,17 @@ def usgs_script(username: str, password: str,
 
         # Did we find anything?
         if scenes["recordsReturned"] > 0:
-            # Aggregate a list of scene ids
-            sceneIds = []
-            for result in scenes["results"]:
-                # Add this scene to the list I would like to download
-                sceneIds.append(result["entityId"])
-
-            # Find the download options for these scenes
-            # NOTE :: Remember the scene list cannot exceed 50,000 items!
-            payload = {"datasetName": dataset["datasetAlias"], "entityIds": sceneIds}
-
+            sceneIds = [result["entityId"] for result in scenes["results"]]
+            payload = {"datasetName": dataset["datasetAlias"],
+                       "entityIds": sceneIds}
             downloadOptions = sendRequest(
-                serviceUrl + "download-options", payload, apiKey
-            )
+                serviceUrl + "download-options", payload, apiKey)
 
-            # Aggregate a list of available products
-            downloads = []
-            for product in downloadOptions:
-                # Make sure the product is available for this scene
-                if product["available"] == True:
-                    downloads.append(
-                        {"entityId": product["entityId"], "productId": product["id"]}
-                    )
+            downloads = [
+                {"entityId": product["entityId"],
+                 "productId": product["id"]}
+                for product in downloadOptions
+                if product["available"]]
 
             # Did we find products?
             if downloads:
