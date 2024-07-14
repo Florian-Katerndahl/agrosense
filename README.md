@@ -44,73 +44,80 @@ Use the built-in continuous integration in GitLab.
 
 ## Project Components and Workflow
 
-### Query USGS Landsat-Data
+# Workflow Matched with Requirements File
 
-**Input:** None  
-**Output:** Landsat scenes with metadata files  
-**Implementation:** Landsatxplore
+## 1. Query USGS for raw Landsat data
+**Requirements file:** Query USGS Landsat-Data
+- **Details:** Query metadata (Cloud cover, time, location, sensor, processing level)
 
-### Generate Multi-Band Images
+## 2. Unpack data
+**Requirements file:** Not explicitly mentioned, but implied as a part of data handling.
 
-**Input:** Landsat scenes with metadata files  
-**Output:** Multi-band images with metadata items set  
-**Implementation:** Custom CLI Tool
+## 3. Generate multi-band image
+**Requirements file:** Generate multi-band images
+- **Details:** Landsat scenes with metadata files, Multi-band images with metadata items set (Custom CLI Tool)
 
-### Mask Multi-Band Images
+## 4. Mask according to quality band
+**Requirements file:** Mask multi-band images, apply gain + offset
+- **Details:** Masked and scaled multiband scenes
 
-**Operation:** Apply gain and offset (remove from metadata afterwards)  
-**Input:** Multi-band images with metadata items set + QAI-files  
-**Output:** Masked and scaled multi-band scenes  
-**Implementation:** Custom CLI Tool
+## 5. Generate datacube
+**Requirements file:** Generate datacube
+- **Details:** All images, Multi-band images with metadata items set + QAI-files, Gridded satellite scenes
 
-### Generate Datacube
+## 6. Calculate spectral index (NDVI)
+**Requirements file:** Timeseries processing + VI-calculation
+- **Details:** Temporal aggregation of VI (Custom CLI Tool)
 
-**Input:** All images  
-**Output:** Gridded satellite scenes  
-**Implementation:** FORCE
+## 7. Aggregate NDVI on yearly basis
+**Requirements file:** Implicit in Timeseries processing + VI-calculation
 
-### Timeseries Processing and VI-Calculation
+## 8. Circle (farmland) detection
+**Requirements file:** Circle / half-circle detection
+- **Details:** Dataset containing circles in images coordinates (OpenCV + custom script)
 
-**Input:** Gridded satellite scenes  
-**Output:** Temporal aggregation of Vegetation Index (VI)  
-**Implementation:** Custom CLI Tool
+## 9. Generate validation data
+**Requirements file:** ? human-in-the-loop?: Generate (training) validation data for farmland
+- **Details:** Gridded satellite scenes + high resolution aerial imagery, Spatial vector database (QGIS / Google Earth)
 
-### Generate (Training) Validation Data for Farmland
+## 10. Accuracy assessment
+**Requirements file:** Accuracy Assessment
+- **Details:** Spatial vector database + Dataset containing circles in images coordinates, Accuracy metrics (scikit-learn)
 
-**Operation:** Human-in-the-loop  
-**Input:** Gridded satellite scenes + high resolution aerial imagery  
-**Output:** Spatial vector database  
-**Implementation:** QGIS / Google Earth
 
-### Train Machine Learning Model for Land Cover Classes
+## Project Workflow Overview
 
-**Input:** Gridded satellite scenes  
-**Output:** Pixel-wise classification of farmland/non-farmland  
-**Implementation:** scikit-learn + custom script
+This project leverages Nextflow for workflow management and includes various stages of data preprocessing, analysis, and validation. Below is a summary of the key updates and features implemented:
 
-### Circle/Half-Circle Detection
+### Key Features and Updates
 
-**Input:** Temporal aggregation of VI or Pixel-wise classification of farmland/non-farmland  
-**Output:** Dataset containing circles in image coordinates  
-**Implementation:** OpenCV + custom script
+- **Workflow Outputs**: Added named outputs for the workflow and removed unnecessary channel names.
+- **Git Management**: Updated `.gitignore` to exclude Nextflow-related files and other unnecessary directories.
+- **Memory Management**: Adjusted memory allocation for processes requiring more resources.
+- **Directory Management**: Moved directory publishes to the configuration file for better management.
+- **Process Labeling**: Labeled processes based on their memory usage.
+- **Parameter Updates**: Included new parameters for input and output directories, and updated paths accordingly.
+- **NDVI Calculation**: Implemented NDVI (Normalized Difference Vegetation Index) calculation and aggregation.
+- **Tool Conversion**: Converted scripts into CLI tools and moved from Snakemake to Nextflow for workflow management.
+- **Data Downloading**: Finalized scripts for downloading and preprocessing data, including a prototype for cropland detection.
+- **Docker Integration**: Added Dockerfile and updated dependencies for reproducible environments.
+- **Circle Detection**: Implemented a feature for detecting circles, converting coordinates, and saving results as GeoPackage files.
+- **Validation Data**: Digitized fields for validation and included a workflow for this purpose.
+- **Bug Fixes and Improvements**: Addressed various bugs, linting issues, and improved code style for better readability and maintenance.
 
-### Generate Output Map
+### Workflow Components
 
-**Input:** Dataset containing circles in image coordinates + background imagery  
-**Output:** PNG  
-**Implementation:** QGIS / R
+- **Preprocessing**: Initial data downloading, unpacking, and stacking processes.
+- **Circle Detection**: Detecting circles in the images and transforming coordinates to spatial reference systems.
+- **NDVI Calculation**: Calculating NDVI from the preprocessed images.
+- **Cropland Detection**: Preliminary implementation for detecting croplands.
+- **Validation**: Digitizing fields and validating the detected features.
 
-### Accuracy Assessment
+### Future Improvements
 
-**Input:** Spatial vector database + Dataset containing circles in image coordinates  
-**Output:** Accuracy metrics  
-**Implementation:** scikit-learn
+- **Simultaneous Classification and Delineation**: Plan to implement simultaneous classification and tree crown delineation.
+- **Pretraining with LiDAR Data**: Improving neural network performance by pretraining with LiDAR data.
 
-### Final Report
-
-**Input:** Not yet set (PNG, accuracy metrics)  
-**Output:** PDF  
-**Implementation:** Quarto / R Markdown
 
 ## Additional Documentation
 
@@ -118,10 +125,21 @@ Use the built-in continuous integration in GitLab.
 - [LICENSE](LICENSE)
 - [CONDUCT.md](CONDUCT.md)
 - [citation.cff](citation.cff)
+- [pyproject.toml] (pyproject.toml)
 
 ## Authors and Acknowledgments
 
-Has to be updated.
+## Authors
+
+This project is a collaborative effort by the following contributors
+
+- **Hasnain Mohi Ud Din** <mohiuddin1@uni-potsdam.de> 
+- **Ayesha Shahzad** <shahzad@uni-potsdam.de>
+- **Ann Zoe Thomas** <thomas6@uni-potsdam.de>
+- **Florian Katerndahl** <florian.katerndahl@uni-potsdam.de>
+- **Malin Ettenhofer** <ettenhofer@uni-potsdam.de>
+
+Each author has brought unique expertise and dedication to this project, contributing significantly to its development and success.
 
 ## License
 
@@ -129,8 +147,214 @@ This project is licensed under the MIT License. For more details, refer to the [
 
 ## Project Status
 
-The project is currently in progress. We have successfully set up the basic framework and worked out our next steps and goals. We welcome contributions and feedback to help us enhance the project's capabilities and accuracy.
+The project is currently in progress. We have successfully set up the basic framework and worked out our next steps and goals. We finished came to nearly finishing the workflow without problems, that takes 9 hours to render, sadly therfore we cannot provide a full accuracy assessment by this moment, will be able to provide that and a full final report at project presentation. 
 
 ## References
 
-For more detailed information, refer to the attached documents and scripts provided in this repository.
+For more detailed information, refer to the attForached documents and scripts provided in this repository.
+
+## Project Branches Structure
+
+### Main Branch (`group_project_2-main-5`)
+
+    group_project_2-main/
+    ├── .gitignore
+    ├── CONDUCT.md
+    ├── CONTRIBUTING.md
+    ├── LICENSE
+    ├── README.md
+    ├── citation.cff
+    ├── pyproject.toml
+    ├── bin/
+    │   ├── apps/
+    │   │   └── preprocess.py
+    │   └── senseagronomy/
+    │       ├── __init__.py
+    │       ├── converter.py
+    │       └── scene.py
+    ├── data/
+    │   └── validation/
+    │       ├── validation_data.gpkg
+    │       └── validation_data.qgz
+    ├── docs/
+    │   ├── RSE_project2_flowchart.pdf
+    │   ├── raw-dag.uxf
+    │   ├── requirements.md
+    │   └── imgs/
+    │       └── dag.png
+    └── tests/
+        └── test_converter.py
+
+### Feature Snakemake Branch (`group_project_2-feature_snakemake`)
+
+    group_project_2-feature_snakemake/
+    ├── .dockerignore
+    ├── .gitignore
+    ├── CONDUCT.md
+    ├── CONTRIBUTING.md
+    ├── LICENSE
+    ├── README.md
+    ├── citation.cff
+    ├── pyproject.toml
+    ├── .docker/
+    │   └── agrosense.Dockerfile
+    ├── bin/
+    │   └── senseagronomy/
+    │       ├── __init__.py
+    │       ├── converter.py
+    │       ├── scene.py
+    │       └── apps/
+    │           └── preprocess.py
+    ├── docs/
+    │   ├── RSE_project2_flowchart.pdf
+    │   ├── raw-dag.uxf
+    │   ├── requirements.md
+    │   └── imgs/
+    │       └── dag.png
+    └── workflow/
+        └── Snakefile
+
+### Feature Transform Coordinates Branch (`group_project_2-17_feature-transform-coordinates`)
+
+    group_project_2-17_feature-transform-coordinates/
+    ├── .dockerignore
+    ├── .gitignore
+    ├── CONDUCT.md
+    ├── CONTRIBUTING.md
+    ├── LICENSE
+    ├── README.md
+    ├── citation.cff
+    ├── pyproject.toml
+    ├── .docker/
+    │   └── agrosense.Dockerfile
+    ├── bin/
+    │   └── senseagronomy/
+    │       ├── __init__.py
+    │       ├── circledetector.py
+    │       ├── converter.py
+    │       ├── downloader.py
+    │       ├── scene.py
+    │       ├── spatialtransformer.py
+    │       └── apps/
+    │           ├── detectcircle.py
+    │           ├── download_data.py
+    │           ├── preprocess.py
+    │           └── transformcoordinates.py
+    ├── data/
+    │   └── validation/
+    │       ├── validation_data.gpkg
+    │       └── validation_data.qgz
+    ├── docs/
+    │   ├── RSE_project2_flowchart.pdf
+    │   ├── raw-dag.uxf
+    │   ├── requirements.md
+    │   └── imgs/
+    │       └── dag.png
+    ├── tests/
+    │   ├── test_converter.py
+    │   └── test_download.py
+    └── workflow/
+        ├── main.nf
+        ├── nextflow.config
+        └── module/
+            ├── cropland_detection.nf
+            ├── higher_level.nf
+            └── preprocess.nf
+
+### Feature Nextflow Branch (`group_project_2-feature_nextflow-2`)
+
+    group_project_2-feature_nextflow-2/
+    ├── .dockerignore
+    ├── .gitignore
+    ├── CONDUCT.md
+    ├── CONTRIBUTING.md
+    ├── LICENSE
+    ├── README.md
+    ├── citation.cff
+    ├── pyproject.toml
+    ├── .docker/
+    │   └── agrosense.Dockerfile
+    ├── bin/
+    │   └── senseagronomy/
+    │       ├── __init__.py
+    │       ├── circledetector.py
+    │       ├── converter.py
+    │       ├── downloader.py
+    │       ├── scene.py
+    │       ├── spatialtransformer.py
+    │       └── apps/
+    │           ├── detectcircle.py
+    │           ├── download_data.py
+    │           ├── preprocess.py
+    │           └── transformcoordinates.py
+    ├── data/
+    │   └── validation/
+    │       ├── validation_data.gpkg
+    │       └── validation_data.qgz
+    ├── docs/
+    │   ├── RSE_project2_flowchart.pdf
+    │   ├── raw-dag.uxf
+    │   ├── requirements.md
+    │   └── imgs/
+    │       └── dag.png
+    ├── tests/
+    │   ├── test_converter.py
+    │   └── test_download.py
+    └── workflow/
+        ├── main.nf
+        ├── nextflow.config
+        └── module/
+            ├── cropland_detection.nf
+            ├── higher_level.nf
+            └── preprocess.nf
+
+### Accuracy Assessment Branch (`group_project_2-accuracy_assessment`)
+
+    group_project_2-accuracy_assessment/
+    ├── .dockerignore
+    ├── .gitignore
+    ├── CONDUCT.md
+    ├── CONTRIBUTING.md
+    ├── LICENSE
+    ├── README.md
+    ├── citation.cff
+    ├── pyproject.toml
+    ├── workflow.md
+    ├── .docker/
+    │   └── agrosense.Dockerfile
+    ├── bin/
+    │   └── senseagronomy/
+    │       ├── __init__.py
+    │       ├── accuracy_assessment.py
+    │       ├── circledetector.py
+    │       ├── converter.py
+    │       ├── downloader.py
+    │       ├── scene.py
+    │       ├── spatialtransformer.py
+    │       └── apps/
+    │           ├── accuracy_assessment_main.py
+    │           ├── detectcircle.py
+    │           ├── download_data.py
+    │           ├── preprocess.py
+    │           └── transformcoordinates.py
+    ├── data/
+    │   └── validation/
+    │       ├── validation_data.gpkg
+    │       └── validation_data.qgz
+    ├── docs/
+    │   ├── RSE_project2_flowchart.pdf
+    │   ├── raw-dag.uxf
+    │   ├── requirements.md
+    │   └── imgs/
+    │       └── dag.png
+    ├── tests/
+    │   ├── test_converter.py
+    │   └── test_download.py
+    └── workflow/
+        ├── main.nf
+        ├── nextflow.config
+        └── module/
+            ├── cropland_detection.nf
+            ├── higher_level.nf
+            └── preprocess.nf
+
