@@ -147,7 +147,7 @@ This project is licensed under the MIT License. For more details, refer to the [
 
 ## Project Status
 
-The project is currently in progress. We have successfully set up the basic framework and worked out our next steps and goals. We finished came to nearly finishing the workflow without problems, that takes 9 hours to render, sadly therfore we cannot provide a full accuracy assessment by this moment, will be able to provide that and a full final report at project presentation. 
+The project is currently in progress. We have successfully set up the basic framework and worked out our next steps and goals. We came close to finishing the workflow, which takes 9 hours to render. Unfortunately, we cannot provide a full accuracy assessment at this moment but will be able to provide that and a full final report at project presentation.
 
 ## References
 
