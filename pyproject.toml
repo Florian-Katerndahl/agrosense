@@ -21,6 +21,7 @@ preprocess = 'senseagronomy.apps.preprocess:main'
 detectcircle = 'senseagronomy.apps.detectcircle:main'
 transformcoordinates = 'senseagronomy.apps.transformcoordinates:main'
 downloadlandsat = 'senseagronomy.apps.download_data:main'
+accuracy_assessment = 'senseagronomy.apps.accuracy_assessment:main'
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -34,9 +35,6 @@ opencv-contrib-python = "^4.10.0.82"
 shapely = "^2.0.4"
 requests = "^2.32.3"
 
-
-[tool.poetry.group.test.dependencies]
-pytest = "^8.2.2"
 
 [build-system]
 requires = ["poetry-core"]
