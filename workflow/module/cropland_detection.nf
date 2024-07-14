@@ -43,23 +43,28 @@ process MERGE_CIRCLES {
     ogrmerge.py -o ${year}_circles.gpkg $circles -single -nln $year -src_layer_field_name tile
     """
 }
-/*
+
 process ACCURACY_ASSESSMENT {
-    publishDir "${params.cropland_directory}", mode: 'copy', pattern: '', enabled: params.store_cropland
+    publishDir "${params.cropland_directory}", mode: 'copy', enabled: params.store_cropland
 
     input:
-    tuple ..., path(validation_data)
+    tuple val(year), path(prediction), path(validation_data)
 
     output:
+    tuple path("accuracy_summary_${year}.csv"), path("${year}_accuracy_assessment.gpkg")
 
     when:
     validation_data.exists()
 
     script:
     """
+    accuracy_assessment --predicted-file $prediction --validation-file $validation_data \
+        --validation-layer validation_data_${year} \
+        --output-file accuracy_summary_${year}.csv \
+        --tp-output-file ${year}_accuracy_assessment.gpkg 
     """
 }
-*/
+
 
 workflow cropland_detection {
     take:
@@ -71,10 +76,10 @@ workflow cropland_detection {
         | TRANSFORM_COORDINATES
         | groupTuple(by: 1)  // group by year
         | MERGE_CIRCLES
-        // | combine( path(validation_data) )
-        // | ACCURACY_ASSESSMENT
+        | combine( Channel.fromPath(validation_db) )
+        | ACCURACY_ASSESSMENT
 
     emit:
     detected_acres = MERGE_CIRCLES.out
-    // accuaracy_acres = ACCURACY_ASSESSMENT.out
+    accuaracy_acres = ACCURACY_ASSESSMENT.out
 }
