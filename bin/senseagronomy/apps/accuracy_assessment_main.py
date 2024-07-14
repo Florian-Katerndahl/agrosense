@@ -63,13 +63,13 @@ def main() -> int:
     # Perform accuracy assessment
     results_df, tp, predicted_circles = accuracy_assessment(args.predicted_file, args.validation_file, args.validation_layer)
     results_df.to_csv(args.output_file, index=False)
-    print("Results for Accuracy Assessment:")
-    print(results_df)
 
-    # Save true positives to a GeoPackage
+    # Save true positives to a GeoPackage and add "correct" column to predicted_circles
+    predicted_circles["correct"] = False
     tp_indices = [i for i, _ in tp]
-    tp_gdf = predicted_circles.iloc[tp_indices]
-    tp_gdf.to_file(args.tp_output_file, driver="GPKG")
+    predicted_circles.loc[tp_indices, "correct"] = True
+
+    predicted_circles.to_file(args.tp_output_file, driver="GPKG")
 
     return 0
 
