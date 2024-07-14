@@ -321,14 +321,14 @@ def search_and_download_data(username: str, password: str,
         scenes = sendRequest(serviceUrl + "scene-search", payload, apiKey)
 
         if scenes["recordsReturned"] > 0:
-            sceneIds = [result["entitiyId"] for result in scenes["results"]]
+            sceneIds = [result["entityId"] for result in scenes["results"]]
             payload = {"datasetName": dataset["datasetAlias"],
                        "entityIds": sceneIds}
             downloadOptions = sendRequest(
                 serviceUrl + "download-options", payload, apiKey)
 
             downloads = [
-                {"entitiyId": product["entitiyId"],
+                {"entityId": product["entityId"],
                  "productId": product["id"]}
                 for product in downloadOptions
                 if product["available"]]
