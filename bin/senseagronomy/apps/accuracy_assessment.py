@@ -1,4 +1,3 @@
-from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter, Namespace
 import geopandas as gpd
 from shapely.geometry import Point
 import numpy as np
@@ -56,16 +55,16 @@ def compute_iou(circle1, circle2):
     union = circle1.union(circle2).area
     return intersection / union
 
-def match_circles(predicted_circles, validation_circles, iou_threshold=0.4):
+def match_circles(predicted_circles, validation_circles, iou_threshold=0.5):
     """
     Compares each predicted circle to validation circles to identify true positives (correctly matched circles), false positives
-    (incorrectly predicted circles), and false negatives (missed validation circles) based on the specified IoU threshold, in our case 0.4 
+    (incorrectly predicted circles), and false negatives (missed validation circles) based on the specified IoU threshold, in our case 0.5 
     (as it had good testing results). 
 
     Parameters:
     - predicted_circles (GeoDataFrame): The predicted circles as a GeoDataFrame.
     - validation_circles (GeoDataFrame): The validation circles as a GeoDataFrame.
-    - iou_threshold (float, optional): The IoU threshold for matching circles. Default is 0.4.
+    - iou_threshold (float, optional): The IoU threshold for matching circles. Default is 0.5.
 
     Returns:
     - tp (list): List of tuples representing true positive matches, where each tuple contains the indices of the matched circles.
@@ -158,7 +157,7 @@ def iou_matrix(y_pred, y_true):
             res[i, j] = iou
     return res
 
-def oversegmentation_factor(y_true, y_pred, threshold=0.4):
+def oversegmentation_factor(y_true, y_pred, threshold=0.5):
     """
     Calculates the oversegmentation factor, which measures the extent to which the predicted geometries exceed the necessary number of
     segments. A higher value indicates a tendency to oversegment.
@@ -196,7 +195,7 @@ def accuracy_assessment(pred_file, val_file, val_layer):
     Returns:
     - results_df (DataFrame): DataFrame containing the accuracy assessment results, including precision, recall, F1-score, average IoU, and oversegmentation factor.
     """
-    iou_threshold = 0.4
+    iou_threshold = 0.5
     metrics = []
     
     validation_circles = load_geopackage(val_file, layer=val_layer)
@@ -215,62 +214,4 @@ def accuracy_assessment(pred_file, val_file, val_layer):
         'oversegmentation_factor': overseg_factor
     })
 
-    return pd.DataFrame(metrics)
-
-def main() -> int:
-    """
-    This function sets up the argument parser for command-line inputs, loads
-    the necessary data from GeoPackage files, performs the
-    accuracy assessment, and saves the results to a CSV file.
-
-    Parameters:
-    --validation-file: Path to the validation GeoPackage file.
-    --predicted-file: Path to the predicted GeoPackage file.
-    --validation-layer: Name of the layer in the validation GeoPackage file.
-    --output-file: Path to the output CSV file.
-
-    Returns:
-    - int: Returns 0 if the program runs successfully.
-    """
-    parser = ArgumentParser(
-        formatter_class=ArgumentDefaultsHelpFormatter,
-        description="This program is used to assess the accuracy of predicted irrigation circles. "
-                    "The validation data should be located in the 'data/validation' directory in the main branch. "
-                    "The predicted files can be downloaded and provided as inputs. "
-                    "The layer name in the validation GeoPackage file should be specified."
-                    "The output CSV file name must be specified by the user."
-    )
-    parser.add_argument(
-        '--validation-file',
-        type=str,
-        required=True,
-        help='Path to the validation GeoPackage file.'
-    )
-    parser.add_argument(
-        '--predicted-file',
-        type=str,
-        required=True,
-        help='Path to the predicted GeoPackage file.'
-    )
-    parser.add_argument(
-        '--validation-layer',
-        type=str,
-        required=True,
-        help='Layer name in the validation GeoPackage file.'
-    )
-    parser.add_argument(
-        '--output-file',
-        type=str,
-        required=True,
-        help='Path to the output CSV file.'
-    )
-
-    args: Namespace = parser.parse_args()
-
-    # Perform accuracy assessment
-    results_df = accuracy_assessment(args.predicted_file, args.validation_file, args.validation_layer)
-    results_df.to_csv(args.output_file, index=False)
-    return 0
-
-if __name__ == "__main__":
-    main()
+    return pd.DataFrame(metrics), tp, predicted_circles
