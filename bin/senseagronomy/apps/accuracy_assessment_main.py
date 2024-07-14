@@ -1,6 +1,7 @@
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter, Namespace
-from accuracy_assessment import accuracy_assessment
+#from accuracy_assessment import accuracy_assessment
 import pandas as pd
+from senseagronomy import accuracy_assessment
 
 def main() -> int:
     """
