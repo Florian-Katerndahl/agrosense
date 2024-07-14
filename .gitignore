@@ -3,7 +3,6 @@ __pycache__
 poetry.lock
 
 resources/
-results/
 .snakemake/
 .venv/
 .parallel/
