@@ -1,18 +1,31 @@
 #!/usr/bin/env python3
 
 """
-This script contains three functions: 'get_credentials', 'get_bounding_box',
-and 'search_and_download_data'.
+This script contains three functions: 'send_request', 'download_file',
+'run_download', 'get_credentials', 'get_bounding_box',
+'search_and_download_data' and 'validate_and_download_data'.
 
-'get_credentials' is responsble for obtainting the username and password
+'send_request' sends a request to a specified URL with the given data and
+optionally includes an API key for authentication.
+
+'download_file' downloads a file from a specified URL and saves it to a given
+path.
+
+'run_download' starts a new thread to download a file from the specified URL
+and saves it to the given path.
+
+'get_credentials' is responsible for obtainting the username and password
 either from the arguments passed or from the environment variables.
 
 'get_bounding_box' calculates the bounding box for a given list of
 coordinates.
 
-'search_and_download_data' logs into the USGS API and EarthExplorer with the
-provided credentials, performs a search based on the specified parameters,
-and optionally downloads the found scenes.
+'search_and_download_data' logs into the USGS API with the provided
+credentials, performs a search based on the specified parameters, and
+downloads the found scenes.
+
+'validate_and_download_data' validates the input parameters and then uses
+them to search and download data from the USGS API.
 """
 
 from datetime import datetime as dt
@@ -20,20 +33,21 @@ from typing import List, Tuple
 
 import os
 import json
-import requests
 import sys
 import time
 import datetime
 import threading
 import re
+import requests
 
 
 MAXTHREADS = 5  # number if threads for download
 SEMA = threading.Semaphore(value=MAXTHREADS)
 THREADS = []
+TIMEOUT = 30
 
 
-def sendRequest(url, data, apiKey=None):
+def send_request(url, data, api_key=None):
     """
     This functions sends an HTTP POST request to the specified url with the
     given data.
@@ -41,7 +55,7 @@ def sendRequest(url, data, apiKey=None):
     Parameters:
         url (str): The URL to which the request is sent.
         data (dict): The data to be sent in the request.
-        apiKey (str): The API key for authentication. If None, no
+        api_key (str): The API key for authentication. If None, no
                       authentication is used. Optional.
 
     Returns:
@@ -59,14 +73,15 @@ def sendRequest(url, data, apiKey=None):
     endpoint = url[pos:]
     json_data = json.dumps(data)
 
-    if apiKey is None:
-        response = requests.post(url, json_data)
+    if api_key is None:
+        response = requests.post(url, json_data, timeout=TIMEOUT)
     else:
-        headers = {"X-Auth-Token": apiKey}
-        response = requests.post(url, json_data, headers=headers)
+        headers = {"X-Auth-Token": api_key}
+        response = requests.post(url, json_data, headers=headers,
+                                 timeout=TIMEOUT)
 
     try:
-        httpStatusCode = response.status_code
+        http_status_code = response.status_code
         if response is None:
             print("No output from service")
             sys.exit()
@@ -75,21 +90,21 @@ def sendRequest(url, data, apiKey=None):
             print("Failed Request ID", output["requestId"])
             print(output["errorCode"], "-", output["errorMessage"])
             sys.exit()
-        if httpStatusCode == 404:
+        if http_status_code == 404:
             print("404 Not Found")
             sys.exit()
-        elif httpStatusCode == 401:
+        elif http_status_code == 401:
             print("401 Unauthorized")
             sys.exit()
-        elif httpStatusCode == 400:
-            print("Error Code", httpStatusCode)
+        elif http_status_code == 400:
+            print("Error Code", http_status_code)
             sys.exit()
-    except Exception as e:
+    except requests.exceptions.RequestException as e:
         response.close()
-        pos = serviceU rl.find("api")
-        print(f"Failed to parse request {endpoint} response. "
-              f"Re-check the input {json_data}. The input examples can be "
-              f"found at {url[:pos]}api/docs/reference/#{endpoint}\n")
+        pos = url.find("api")
+        print(f"Failed to parse request {endpoint} response due to error "
+              f"{e}. Re-check the input {json_data}. The input examples can "
+              f"be found at {url[:pos]}api/docs/reference/#{endpoint}\n")
         sys.exit()
     response.close()
     print(f"Finished request {endpoint} with request ID "
@@ -98,7 +113,7 @@ def sendRequest(url, data, apiKey=None):
     return output["data"]
 
 
-def downloadFile(url, path):
+def download_file(url, path):
     """
     This function downloads a file from the specified URL and saves
     it to the given path.
@@ -117,25 +132,23 @@ def downloadFile(url, path):
         the downlaod and releases if after the download is finished,
         regardless of whether the download was successful or not.
     """
-    SEMA.acquire()
     try:
-        response = requests.get(url, stream=True)
-        disposition = response.headers["content-disposition"]
-        filename = re.findall("filename=(.+)", disposition)[0].strip('"')
-        print(f"Downloading {filename} ...\n", file=sys.stderr)
-        if path and not path.endswith("/"):
-            path += "/"
-        with open(path + filename, "wb") as file:
-            file.write(response.content)
-        print(f"Downloaded {filename}", file=sys.stderr)
-    except Exception as e:
+        with SEMA:
+            response = requests.get(url, stream=True, timeout=TIMEOUT)
+            disposition = response.headers["content-disposition"]
+            filename = re.findall("filename=(.+)", disposition)[0].strip('"')
+            print(f"Downloading {filename} ...\n", file=sys.stderr)
+            if path and not path.endswith("/"):
+                path += "/"
+            with open(path + filename, "wb") as file:
+                file.write(response.content)
+            print(f"Downloaded {filename}", file=sys.stderr)
+    except requests.exceptions.RequestException as e:
         print(f"Failed to download from {url}. {e}. Will try to re-download.")
-        runDownload(THREADS, url, path)
-    finally:
-        SEMA.release()
+        run_download(THREADS, url, path)
 
 
-def runDownload(threads, url, path):
+def run_download(threads, url, path):
     """
     This function start a new thread to download a file from the specified URL
     and saves it to the given path.
@@ -150,7 +163,7 @@ def runDownload(threads, url, path):
         Through the use of the threading module multiple downloads occuring
         concurrently is allowed.
     """
-    thread = threading.Thread(target=downloadFile, args=(url, path,))
+    thread = threading.Thread(target=download_file, args=(url, path,))
     threads.append(thread)
     thread.start()
 
@@ -244,98 +257,99 @@ def search_and_download_data(username: str, password: str,
     Returns:
         None
     """
-    serviceUrl = "https://m2m.cr.usgs.gov/api/api/json/stable/"
+    service_url = "https://m2m.cr.usgs.gov/api/api/json/stable/"
 
-    apiKey = sendRequest(serviceUrl + "login",
-                         {"username": username, "password": password})
-    print("API Key: " + apiKey + "\n")
+    api_key = send_request(service_url + "login",
+                           {"username": username, "password": password})
+    print("API Key: " + api_key + "\n")
 
-    spatialFilter = {"filterType": "mbr",
-                     "lowerLeft": {"latitude": mbr[1], "longitude": mbr[0]},
-                     "upperRight": {"latitude": mbr[3], "longitude": mbr[2]}}
-    temporalFilter = {"start": start_date, "end": end_date}
-    datasetName = "landsat_ot_c2_l2"
+    spatial_filter = {"filterType": "mbr",
+                      "lowerLeft": {"latitude": mbr[1], "longitude": mbr[0]},
+                      "upperRight": {"latitude": mbr[3], "longitude": mbr[2]}}
+    temporal_filter = {"start": start_date, "end": end_date}
+    dataset_name = "landsat_ot_c2_l2"
 
-    payload = {"datasetName": datasetName, "spatialFilter": spatialFilter,
-               "temporalFilter": temporalFilter}
+    payload = {"datasetName": dataset_name, "spatialFilter": spatial_filter,
+               "temporalFilter": temporal_filter}
     print("Searching datasets...\n")
-    datasets = sendRequest(serviceUrl + "dataset-search", payload, apiKey)
+    datasets = send_request(service_url + "dataset-search", payload, api_key)
 
     print("Found ", len(datasets), " datasets\n")
     # download datasets
     for dataset in datasets:
-        if dataset["datasetAlias"] != datasetName:
+        if dataset["datasetAlias"] != dataset_name:
             print("Found dataset " + dataset["collectionName"] +
                   " but skipping it.\n")
             continue
 
-        acquisitionFilter = temporalFilter
+        acquisition_filter = temporal_filter
         payload = {"datasetName": dataset["datasetAlias"],
                    "maxResults": max_results, "startingNumber": 1,
-                   "sceneFilter": {"spatialFilter": spatialFilter,
-                                   "acquisitionFilter": acquisitionFilter,
+                   "sceneFilter": {"spatialFilter": spatial_filter,
+                                   "acquisitionFilter": acquisition_filter,
                                    "cloudCoverFilter":
                                    {"min": 0, "max": max_cloud_cover,
                                     "includeUnknown": False}}}
 
         print("Searching scenes...\n\n")
-        scenes = sendRequest(serviceUrl + "scene-search", payload, apiKey)
+        scenes = send_request(service_url + "scene-search", payload, api_key)
 
         if scenes["recordsReturned"] > 0:
-            sceneIds = [result["entitiyId"] for result in scenes["results"]]
+            scene_ids = [result["entityId"] for result in scenes["results"]]
             payload = {"datasetName": dataset["datasetAlias"],
-                       "entityIds": sceneIds}
-            downloadOptions = sendRequest(
-                serviceUrl + "download-options", payload, apiKey)
+                       "entityIds": scene_ids}
+            download_options = send_request(
+                service_url + "download-options", payload, api_key)
 
             downloads = [
-                {"entitiyId": product["entitiyId"],
+                {"entityId": product["entityId"],
                  "productId": product["id"]}
-                for product in downloadOptions
+                for product in download_options
                 if product["available"]]
 
             if downloads:
                 label = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
                 payload = {"downloads": downloads, "label": label}
-                requestResults = sendRequest(
-                    serviceUrl + "download-request", payload, apiKey)
+                request_results = send_request(
+                    service_url + "download-request", payload, api_key)
 
-                if requestResults.get("preparingDownloads"):
+                if request_results.get("preparingDownloads"):
                     payload = {"label": label}
-                    moreDownloadUrls = sendRequest(
-                        serviceUrl + "download-retrieve", payload, apiKey)
-                    downloadIds = []
+                    more_download_urls = send_request(
+                        service_url + "download-retrieve", payload, api_key)
+                    download_ids = []
 
                     for download in (
-                        moreDownloadUrls["available"] +
-                        moreDownloadUrls["requested"]
+                        more_download_urls["available"] +
+                        more_download_urls["requested"]
                     ):
                         if (
                             str(download["downloadId"]) in
-                            requestResults["newRecords"] or
+                            request_results["newRecords"] or
                             str(download["downloadId"]) in
-                            requestResults["duplicateProducts"]
+                            request_results["duplicateProducts"]
                         ):
-                            downloadIds.append(download["downloadId"])
-                            runDownload(THREADS, download["url"], output_dir)
+                            download_ids.append(download["downloadId"])
+                            run_download(THREADS, download["url"], output_dir)
 
                     # recall the download-retrieve method
-                    while (len(downloadIds) <
-                           (len(downloads) - len(requestResults["failed"]))):
+                    while (len(download_ids) <
+                           (len(downloads) - len(request_results["failed"]))):
                         time.sleep(30)
                         print("Trying to retrieve data\n")
-                        moreDownloadUrls = sendRequest(
-                            serviceUrl + "download-retrieve", payload, apiKey)
-                        for download in moreDownloadUrls["available"]:
-                            if download["downloadId"] not in downloadIds:
-                                downloadIds.append(download["downloadId"])
-                                runDownload(THREADS, download["url"],
-                                            output_dir)
+                        more_download_urls = send_request(
+                            service_url + "download-retrieve", payload,
+                            api_key)
+                        for download in more_download_urls["available"]:
+                            if download["downloadId"] not in download_ids:
+                                download_ids.append(download["downloadId"])
+                                run_download(THREADS, download["url"],
+                                             output_dir)
 
                 else:
                     # Get all available downloads
-                    for download in requestResults["availableDownloads"]:
-                        runDownload(THREADS, download["url"], output_dir)
+                    for download in request_results["availableDownloads"]:
+                        run_download(THREADS, download["url"], output_dir)
         else:
             print("Search found no results.\n")
 
@@ -348,7 +362,7 @@ def search_and_download_data(username: str, password: str,
 
     # Logout so the API Key cannot be used anymore
     endpoint = "logout"
-    if sendRequest(serviceUrl + endpoint, None, apiKey) is None:
+    if send_request(service_url + endpoint, None, api_key) is None:
         print("Logged Out\n\n")
     else:
         print("Logout Failed\n\n")
@@ -411,7 +425,10 @@ def validate_and_download_data(username: str, password: str,
                              " elements. Either a coordinate tuple is empty or"
                              " one latitude/longitude variable is missing.")
         latitude, longitude = coordinate
-        if not (-90 <= latitude <= 90) or not (-180 <= longitude <= 180):
+        if (
+            -90 > latitude or latitude > 90 or
+            -180 > longitude or longitude > 180
+        ):
             raise ValueError("Error: Invalid latitude or longitude value.")
     # check whether start_date is before end_date
     if (dt.strptime(start_date, "%Y-%m-%d")
