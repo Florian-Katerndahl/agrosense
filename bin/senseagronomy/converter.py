@@ -1,7 +1,29 @@
+"""
+converter.py
+
+This module provides functions for converting lists of string flags into
+corresponding Pixel, Radsat, Aerosol, and Cloud enumerations from
+the senseagronomy module.
+"""
+
 from typing import List, Union
 from senseagronomy import Pixel, Aerosol, Radsat, Cloud
 
+
 def str2pixel(flags: List[str]) -> List[Pixel]:
+    """
+    Convert a list of string flags into a list of Pixel enumeration values.
+
+    Args:
+        flags (List[str]): A list of string flags representing pixel types.
+
+    Returns:
+        List[Pixel]: A list of Pixel enumeration values corresponding to the
+        input flags.
+
+    Raises:
+        RuntimeError: If an unknown flag is encountered.
+    """
     out: List[Pixel] = []
     for flag in flags:
         match flag:
@@ -54,12 +76,25 @@ def str2pixel(flags: List[str]) -> List[Pixel]:
             case "CC_HIGH":
                 out.append(Pixel.CC_HIGH)
             case _:
-                raise RuntimeError
+                raise RuntimeError(f"Unknown flag: {flag}")
 
     return out
 
 
 def str2radsat(flags: List[str]) -> List[Radsat]:
+    """
+    Convert a list of string flags into a list of Radsat enumeration values.
+
+    Args:
+        flags (List[str]): A list of string flags representing radsat bands.
+
+    Returns:
+        List[Radsat]: A list of Radsat enumeration values corresponding to
+        the input flags.
+
+    Raises:
+        RuntimeError: If an unknown flag is encountered.
+    """
     out: List[Radsat] = []
     for flag in flags:
         match flag:
@@ -84,7 +119,7 @@ def str2radsat(flags: List[str]) -> List[Radsat]:
             case "TERRAIN_OCCLUSION":
                 out.append(Radsat.TERRAIN_OCCLUSION)
             case _:
-                raise RuntimeError
+                raise RuntimeError(f"Unknown flag: {flag}")
 
     return out
 
@@ -93,7 +128,25 @@ def str2aerosol(
     platform: str,
     a_flags: List[str],
     c_flags: List[str]
-    ) -> List[Union[Aerosol, Cloud]]:
+) -> List[Union[Aerosol, Cloud]]:
+    """
+    Convert a list of string flags into a list of Aerosol or Cloud
+    enumeration values based on the platform.
+
+    Args:
+        platform (str): The platform name which determines the flag type.
+        a_flags (List[str]): A list of string flags representing aerosol types
+        (if platform is "OLI").
+        c_flags (List[str]): A list of string flags representing cloud types
+        (if platform is not "OLI").
+
+    Returns:
+        List[Union[Aerosol, Cloud]]: A list of Aerosol or Cloud enumeration
+        values corresponding to the input flags.
+
+    Raises:
+        RuntimeError: If an unknown flag is encountered.
+    """
     out: List[Union[Aerosol, Cloud]] = []
     if platform == "OLI":
         for flag in a_flags:
@@ -113,7 +166,7 @@ def str2aerosol(
                 case "HIGH":
                     out.append(Aerosol.HIGH)
                 case _:
-                    raise RuntimeError
+                    raise RuntimeError(f"Unknown aerosol flag: {flag}")
     else:
         for flag in c_flags:
             match flag:
@@ -130,6 +183,6 @@ def str2aerosol(
                 case "WATER":
                     out.append(Cloud.WATER)
                 case _:
-                    raise RuntimeError
+                    raise RuntimeError(f"Unknown cloud flag: {flag}")
 
     return out

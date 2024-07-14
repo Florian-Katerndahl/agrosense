@@ -27,10 +27,12 @@ import datetime
 import threading
 import re
 
-
-MAXTHREADS = 5  # number if threads for download
-SEMA = threading.Semaphore(value=MAXTHREADS)
-THREADS = []
+maxthreads = 5  # Threads count for downloads
+sema = threading.Semaphore(value=maxthreads)
+label = datetime.datetime.now().strftime(
+    "%Y%m%d_%H%M%S"
+)  # Customized label using date time
+threads = []
 
 
 def sendRequest(url, data, apiKey=None):
@@ -86,14 +88,19 @@ def sendRequest(url, data, apiKey=None):
             sys.exit()
     except Exception as e:
         response.close()
-        pos = url.find("api")
-        print(f"Failed to parse request {endpoint} response. "
-              f"Re-check the input {json_data}. The input examples can be "
-              f"found at {url[:pos]}api/docs/reference/#{endpoint}\n")
+        pos = serviceUrl.find("api")
+        print(
+            f"Failed to parse request {endpoint} response. "
+            f"Re-check the input {json_data}. "
+            f"The input examples can be found at "
+            f"{url[:pos]}api/docs/reference/#{endpoint}\n"
+        )
         sys.exit()
     response.close()
-    print(f"Finished request {endpoint} with request ID "
-          f"{output['requestId']}\n")
+    print(
+        f"Finished request {endpoint} "
+        f"with request ID {output['requestId']}\n"
+    )
 
     return output["data"]
 
@@ -216,6 +223,22 @@ def get_bounding_box(coordinates: List[Tuple[float, float]]) -> List[float]:
     return bounding_box
 
 
+def usgs_script(
+    username: str,
+    password: str,
+    mbr: List[float],
+    start_date: str,
+    end_date: str,
+    output_dir: str,
+    max_cloud_cover: int = 10,
+    max_results: int = 100
+) -> None:
+
+    """
+    copied from example script
+    """
+    print("\nRunning Scripts...\n")
+
 def search_and_download_data(username: str, password: str,
                              mbr: List[float], start_date: str,
                              end_date: str, output_dir: str,
@@ -278,6 +301,22 @@ def search_and_download_data(username: str, password: str,
                                    {"min": 0, "max": max_cloud_cover,
                                     "includeUnknown": False}}}
 
+        payload = {
+            "datasetName": dataset["datasetAlias"],
+            "maxResults": max_results,
+            "startingNumber": 1,
+            "sceneFilter": {
+                "spatialFilter": spatialFilter,
+                "acquisitionFilter": acquisitionFilter,
+                "cloudCoverFilter": {
+                    "min": 0,
+                    "max": max_cloud_cover,
+                    "includeUnknown": False
+                }
+            },
+        }
+
+        # Now I need to run a scene search to find data to download
         print("Searching scenes...\n\n")
         scenes = sendRequest(serviceUrl + "scene-search", payload, apiKey)
 
@@ -306,22 +345,44 @@ def search_and_download_data(username: str, password: str,
                         serviceUrl + "download-retrieve", payload, apiKey)
                     downloadIds = []
 
-                    for download in (
-                        moreDownloadUrls["available"] +
-                        moreDownloadUrls["requested"]
-                    ):
+                    for download in moreDownloadUrls["available"]:
                         if (
-                            str(download["downloadId"]) in
-                            requestResults["newRecords"] or
-                            str(download["downloadId"]) in
-                            requestResults["duplicateProducts"]
+                            str(download["downloadId"])
+                            in requestResults["newRecords"]
+                            or str(download["downloadId"])
+                            in requestResults["duplicateProducts"]
                         ):
                             downloadIds.append(download["downloadId"])
-                            runDownload(THREADS, download["url"], output_dir)
+                            runDownload(threads, download["url"], output_dir)
 
-                    # recall the download-retrieve method
-                    while (len(downloadIds) <
-                           (len(downloads) - len(requestResults["failed"]))):
+                    for download in moreDownloadUrls["requested"]:
+                        if (
+                            str(download["downloadId"])
+                            in requestResults["newRecords"]
+                            or str(download["downloadId"])
+                            in requestResults["duplicateProducts"]
+                        ):
+                            downloadIds.append(download["downloadId"])
+                            runDownload(threads, download["url"], output_dir)
+
+                    # Didn't get all of the reuested downloads, call the
+                    # download-retrieve method again probably after 30 seconds
+                    while len(downloadIds) < (
+                        requestedDownloadsCount - len(requestResults["failed"])
+                    ):
+                        preparingDownloads = (
+                            requestedDownloadsCount
+                            - len(downloadIds)
+                            - len(requestResults["failed"])
+                        )
+                        message = (
+                            "\n"
+                            f"{preparingDownloads} downloads are not"
+                            "available. Waiting for 30 seconds.\n"
+                        )
+
+                        print(message)
+
                         time.sleep(30)
                         print("Trying to retrieve data\n")
                         moreDownloadUrls = sendRequest(
@@ -329,8 +390,11 @@ def search_and_download_data(username: str, password: str,
                         for download in moreDownloadUrls["available"]:
                             if download["downloadId"] not in downloadIds:
                                 downloadIds.append(download["downloadId"])
-                                runDownload(THREADS, download["url"],
-                                            output_dir)
+                                runDownload(
+                                    threads,
+                                    download["url"],
+                                    output_dir
+                                )
 
                 else:
                     # Get all available downloads
@@ -354,12 +418,17 @@ def search_and_download_data(username: str, password: str,
         print("Logout Failed\n\n")
 
 
-def validate_and_download_data(username: str, password: str,
-                               coordinates: List[Tuple[float, float]],
-                               start_date: str, end_date: str,
-                               output_dir: str,
-                               max_cloud_cover: int = 10,
-                               max_results: int = 100) -> None:
+def search_and_download_data(
+    username: str,
+    password: str,
+    coordinates: List[Tuple[float, float]],
+    start_date: str,
+    end_date: str,
+    output_dir: str,
+    max_cloud_cover: int = 10,
+    max_results: int = 100,
+    download: bool = True
+) -> None:
     """
     This function validates the input parameters and then uses them to search
     and download data from the USGS API.
