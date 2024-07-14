@@ -95,12 +95,6 @@ def main() -> int:
         type=str,
         required=False,
         help="Your output directory to store the downloaded scenes.")
-    parser.add_argument(
-        "--download",
-        type=bool,
-        required=False,
-        default=True,
-        help="Whether to download the found scenes. Default is True.")
 
     args = parser.parse_args()
 
@@ -118,10 +112,10 @@ def main() -> int:
         raise ValueError("Error: At least one coordinate containing of"
                          " longitude and latitude has to be given.")
     # search and download the Landsat scenes
-    search_and_download_data(username, password, coordinates, args.start_date,
-                             args.end_date, args.output_dir,
-                             max_cloud_cover=args.max_cloud_cover,
-                             max_results=args.max_results,
-                             download=args.download)
+    validate_and_download_data(username, password, coordinates,
+                               args.start_date, args.end_date,
+                               args.output_dir,
+                               max_cloud_cover=args.max_cloud_cover,
+                               max_results=args.max_results)
 
     return 0

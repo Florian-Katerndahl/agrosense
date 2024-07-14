@@ -15,18 +15,14 @@ provided credentials, performs a search based on the specified parameters,
 and optionally downloads the found scenes.
 """
 
-import os
-
 from datetime import datetime as dt
-from landsatxplore.api import API
-from landsatxplore.earthexplorer import EarthExplorer
 from typing import List, Tuple
 
+import os
 import json
 import requests
 import sys
 import time
-import argparse
 import datetime
 import threading
 import re
@@ -39,8 +35,28 @@ label = datetime.datetime.now().strftime(
 threads = []
 
 
-# send http request
 def sendRequest(url, data, apiKey=None):
+    """
+    This functions sends an HTTP POST request to the specified url with the
+    given data.
+
+    Parameters:
+        url (str): The URL to which the request is sent.
+        data (dict): The data to be sent in the request.
+        apiKey (str): The API key for authentication. If None, no
+                      authentication is used. Optional.
+
+    Returns:
+        dict: The data from the response of the request.
+
+    Raises:
+        SystemExit: Exits the program if an error occurs or if the HTTP status
+                    code indicates an error.
+
+    Note:
+        Outputs various error and status messages depending on the result of
+        the request.
+    """
     pos = url.rfind("/") + 1
     endpoint = url[pos:]
     json_data = json.dumps(data)
@@ -90,24 +106,57 @@ def sendRequest(url, data, apiKey=None):
 
 
 def downloadFile(url, path):
-    sema.acquire()
+    """
+    This function downloads a file from the specified URL and saves
+    it to the given path.
+
+    Parameters:
+        url (str): The URL of the file to be downloaded.
+        path (str): The path where the downloaded file will be saved.
+
+    Raises:
+        Exception: If there is an error during the download process, it will
+                   try to re-download the file.
+
+    Note:
+        This function uses a semaphore (SEMA) to limit the number of
+        concurrent downloads. It acquires the semaphore before starting
+        the downlaod and releases if after the download is finished,
+        regardless of whether the download was successful or not.
+    """
+    SEMA.acquire()
     try:
         response = requests.get(url, stream=True)
         disposition = response.headers["content-disposition"]
         filename = re.findall("filename=(.+)", disposition)[0].strip('"')
         print(f"Downloading {filename} ...\n", file=sys.stderr)
-        if path != "" and path[-1] != "/":
-            filename = "/" + filename
-        open(path + filename, "wb").write(response.content)
-        print(f"Downloaded {filename}\n", file=sys.stderr)
-        sema.release()
+        if path and not path.endswith("/"):
+            path += "/"
+        with open(path + filename, "wb") as file:
+            file.write(response.content)
+        print(f"Downloaded {filename}", file=sys.stderr)
     except Exception as e:
         print(f"Failed to download from {url}. {e}. Will try to re-download.")
-        sema.release()
-        runDownload(threads, url, path)
+        runDownload(THREADS, url, path)
+    finally:
+        SEMA.release()
 
 
 def runDownload(threads, url, path):
+    """
+    This function start a new thread to download a file from the specified URL
+    and saves it to the given path.
+
+    Parameters:
+        threads (list): A list of threads. The new thread will be appended
+                        to this list.
+        url (str): The URL of the file to be downloaded.
+        path (str): The path where the downloaded file will be saved.
+
+    Note:
+        Through the use of the threading module multiple downloads occuring
+        concurrently is allowed.
+    """
     thread = threading.Thread(target=downloadFile, args=(url, path,))
     threads.append(thread)
     thread.start()
@@ -190,52 +239,67 @@ def usgs_script(
     """
     print("\nRunning Scripts...\n")
 
+def search_and_download_data(username: str, password: str,
+                             mbr: List[float], start_date: str,
+                             end_date: str, output_dir: str,
+                             max_cloud_cover: int = 10,
+                             max_results: int = 100) -> None:
+    """
+    This function downloads Landsat datasets from the USGS API within a
+    specified date range, cloud cover limit, and geographical bounding box.
+
+    Parameters:
+        username (str): The username for the USGS API.
+        password (str): The password for the USGS API.
+        mbr (List[float]): The minimum bounding rectangle (MBR) for the
+                           geographical area of interest.
+        start_date (str): The start date for the date range filter in
+                          the format 'YYYY-MM-DD'.
+        end_date (str): The end date for the date range filter in the
+                        format 'YYYY-MM-DD'.
+        output_dir (str): The directory where the downloaded files
+                          will be saved.
+        max_cloud_cover (int): The maximum cloud cover percentage for the
+                               scenes. Defaults to 10. Optional.
+        max_results (int): The maximum number of scenes to download.
+                           Defaults to 100. Optional.
+
+    Returns:
+        None
+    """
     serviceUrl = "https://m2m.cr.usgs.gov/api/api/json/stable/"
 
-    # login
-    payload = {"username": username, "password": password}
-
-    apiKey = sendRequest(serviceUrl + "login", payload)
-
+    apiKey = sendRequest(serviceUrl + "login",
+                         {"username": username, "password": password})
     print("API Key: " + apiKey + "\n")
 
+    spatialFilter = {"filterType": "mbr",
+                     "lowerLeft": {"latitude": mbr[1], "longitude": mbr[0]},
+                     "upperRight": {"latitude": mbr[3], "longitude": mbr[2]}}
+    temporalFilter = {"start": start_date, "end": end_date}
     datasetName = "landsat_ot_c2_l2"
 
-    spatialFilter = {
-        "filterType": "mbr",
-        "lowerLeft": {"latitude": mbr[1], "longitude": mbr[0]},
-        "upperRight": {"latitude": mbr[3], "longitude": mbr[2]},
-    }
-
-    temporalFilter = {"start": start_date, "end": end_date}
-
-    payload = {
-        "datasetName": datasetName,
-        "spatialFilter": spatialFilter,
-        "temporalFilter": temporalFilter,
-    }
-
+    payload = {"datasetName": datasetName, "spatialFilter": spatialFilter,
+               "temporalFilter": temporalFilter}
     print("Searching datasets...\n")
     datasets = sendRequest(serviceUrl + "dataset-search", payload, apiKey)
 
     print("Found ", len(datasets), " datasets\n")
-
     # download datasets
     for dataset in datasets:
-        # Because I've ran this before I know that I want GLS_ALL,
-        # I don't want to download anything I don't want so we will
-        # skip any other datasets that might be found, logging it incase
-        #  I want to look into downloading that data in the future.
         if dataset["datasetAlias"] != datasetName:
-            print(
-                f"Found dataset {dataset['collectionName']} but skipping it.\n"
-            )
+            print("Found dataset " + dataset["collectionName"] +
+                  " but skipping it.\n")
             continue
 
-        # I don't want to limit my results, but using the dataset-filters
-        # request, you can find additional filters
-
         acquisitionFilter = temporalFilter
+        payload = {"datasetName": dataset["datasetAlias"],
+                   "maxResults": max_results, "startingNumber": 1,
+                   "sceneFilter": {"spatialFilter": spatialFilter,
+                                   "acquisitionFilter": acquisitionFilter,
+                                   "cloudCoverFilter":
+                                   {"min": 0, "max": max_cloud_cover,
+                                    "includeUnknown": False}}}
 
         payload = {
             "datasetName": dataset["datasetAlias"],
@@ -254,67 +318,31 @@ def usgs_script(
 
         # Now I need to run a scene search to find data to download
         print("Searching scenes...\n\n")
-
         scenes = sendRequest(serviceUrl + "scene-search", payload, apiKey)
 
-        # Did we find anything?
         if scenes["recordsReturned"] > 0:
-            # Aggregate a list of scene ids
-            sceneIds = []
-            for result in scenes["results"]:
-                # Add this scene to the list I would like to download
-                sceneIds.append(result["entityId"])
-
-            # Find the download options for these scenes
-            # NOTE :: Remember the scene list cannot exceed 50,000 items!
-            payload = {
-                "datasetName": dataset["datasetAlias"],
-                "entityIds": sceneIds
-            }
-
+            sceneIds = [result["entitiyId"] for result in scenes["results"]]
+            payload = {"datasetName": dataset["datasetAlias"],
+                       "entityIds": sceneIds}
             downloadOptions = sendRequest(
-                serviceUrl + "download-options", payload, apiKey
-            )
+                serviceUrl + "download-options", payload, apiKey)
 
-            # Aggregate a list of available products
-            downloads = []
-            for product in downloadOptions:
-                # Make sure the product is available for this scene
-                if product["available"] is True:
-                    downloads.append(
-                        {
-                            "entityId": product["entityId"],
-                            "productId": product["id"]
-                        }
-                    )
+            downloads = [
+                {"entitiyId": product["entitiyId"],
+                 "productId": product["id"]}
+                for product in downloadOptions
+                if product["available"]]
 
-            # Did we find products?
             if downloads:
-                requestedDownloadsCount = len(downloads)
-                # print("Found", requestedDownloadsCount, "downloads")
-                # set a label for the download request
-                label = datetime.datetime.now().strftime(
-                    "%Y%m%d_%H%M%S"
-                )  # Customized label using date time
+                label = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
                 payload = {"downloads": downloads, "label": label}
-                # Call the download to get the direct download urls
                 requestResults = sendRequest(
-                    serviceUrl + "download-request", payload, apiKey
-                )
+                    serviceUrl + "download-request", payload, apiKey)
 
-                # PreparingDownloads has a valid link that can be used but data
-                # may not be immediately available Call the download-retrieve
-                # method to get download that is available for immediate
-                # download
-                if (
-                    requestResults["preparingDownloads"] is not None
-                    and len(requestResults["preparingDownloads"]) > 0
-                ):
+                if requestResults.get("preparingDownloads"):
                     payload = {"label": label}
                     moreDownloadUrls = sendRequest(
-                        serviceUrl + "download-retrieve", payload, apiKey
-                    )
-
+                        serviceUrl + "download-retrieve", payload, apiKey)
                     downloadIds = []
 
                     for download in moreDownloadUrls["available"]:
@@ -358,15 +386,9 @@ def usgs_script(
                         time.sleep(30)
                         print("Trying to retrieve data\n")
                         moreDownloadUrls = sendRequest(
-                            serviceUrl + "download-retrieve", payload, apiKey
-                        )
+                            serviceUrl + "download-retrieve", payload, apiKey)
                         for download in moreDownloadUrls["available"]:
-                            if download["downloadId"] not in downloadIds and (
-                                str(download["downloadId"])
-                                in requestResults["newRecords"]
-                                or str(download["downloadId"])
-                                in requestResults["duplicateProducts"]
-                            ):
+                            if download["downloadId"] not in downloadIds:
                                 downloadIds.append(download["downloadId"])
                                 runDownload(
                                     threads,
@@ -377,12 +399,13 @@ def usgs_script(
                 else:
                     # Get all available downloads
                     for download in requestResults["availableDownloads"]:
-                        runDownload(threads, download["url"], output_dir)
+                        runDownload(THREADS, download["url"], output_dir)
         else:
             print("Search found no results.\n")
 
-    print("Downloading files... Please do not close the program\n", file=sys.stderr)
-    for thread in threads:
+    print("Downloading files... Please do not close the program\n",
+          file=sys.stderr)
+    for thread in THREADS:
         thread.join()
 
     print("Complete Downloading")
@@ -407,16 +430,12 @@ def search_and_download_data(
     download: bool = True
 ) -> None:
     """
-    This function logs into the USGS API and EarthExplorer with the provided
-    username and password, searches for scenes of the Landsat satellite based
-    on the provided parameters, optionally downloads each found scene, and
-    then logs out of the USGS API and EarthExplorer. It previously varifys the
-    input for 'max_results', 'max_cloud_cover', 'coordinates', 'start_date'
-    and 'end_date'.
+    This function validates the input parameters and then uses them to search
+    and download data from the USGS API.
 
     Parameters:
-        username (str): The username for the USGS API and EarthExplorer.
-        password (str): The password for the USGS API and EarthExplorer.
+        username (str): The username for USGS.
+        password (str): The password for USGS.
         coordinates (List[Tuple[float, float]]): A list of tuples where each
             tuple represents a pair of latitude and longitude for one
             coordinate.
@@ -427,11 +446,9 @@ def search_and_download_data(
         output_dir (str): The directory where the downloaded scenes
             will be saved.
         max_cloud_cover (int): The maximum cloud cover percentage for
-            the search. Default is 10
+            the search. Default is 10. Optional
         max_results (int): The maximum number of results to return from
-            the search. Default is 100.
-        download (bool): Whether to download the found scenes.
-            Default is True.
+            the search. Default is 100. Optional
 
     Returns:
         None
@@ -469,32 +486,13 @@ def search_and_download_data(
     if (dt.strptime(start_date, "%Y-%m-%d")
             >= dt.strptime(end_date, "%Y-%m-%d")):
         raise ValueError("Error: The start_date must be before the end_date.")
+
     # Search and Download
-    # login to API and EarthExplorer
-    # api = API(username, password)
-    # earth_explorer = EarthExplorer(username, password)
-    # search depending on the number of coordinates
-    if len(coordinates) == 1:
-        # search for scenes if coordinates only contains one searching point
-        raise RuntimeError
-        # scenes = api.search(dataset="landsat_etm_c2_l2",
-        #                     start_date=start_date,
-        #                     end_date=end_date,
-        #                     max_cloud_cover=max_cloud_cover,
-        #                     max_results=max_results,
-        #                     latitude=coordinates[0][0],
-        #                     longitude=coordinates[0][1])
-    elif len(coordinates) >= 2:
+    if len(coordinates) >= 2:
         # get bounding box from coordinates
         bounding_box = get_bounding_box(coordinates)
-        # search for scenes through a bounding box
-        usgs_script(
-            username,
-            password,
-            bounding_box,
-            start_date,
-            end_date,
-            output_dir,
-            max_cloud_cover,
-            max_results
-        )
+        search_and_download_data(username, password, bounding_box, start_date,
+                                 end_date, output_dir, max_cloud_cover,
+                                 max_results)
+    else:
+        raise ValueError("At least two coordinates are required.")
