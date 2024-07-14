@@ -4,6 +4,9 @@ import numpy as np
 import os
 from shapely.strtree import STRtree
 import pandas as pd
+""" 
+This script utilizes data and methodologies presented in the project titled "Individual Tree Crown Delineation in High-Resolution Remote Sensing Images Based on U-Net" by Maximilian Freudenberg, Paul Magdon, and Nils Nölke. The accuracy assessment of the tree crown delineation approach described in this project has been referenced and incorporated into this script to ensure robust and validated results. For further details, please refer to the original publication.
+"""
 
 def load_geopackage(file_path, layer=None):
     """
