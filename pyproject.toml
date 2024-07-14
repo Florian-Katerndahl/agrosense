@@ -32,6 +32,7 @@ numba = "^0.59.1"
 geopandas = "^0.14.4"
 opencv-contrib-python = "^4.10.0.82"
 shapely = "^2.0.4"
+requests = "^2.32.3"
 
 
 [build-system]
